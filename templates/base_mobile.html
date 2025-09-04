@@ -178,7 +178,8 @@
             <!-- Desktop Navigation -->
             <div class="navbar-nav ms-auto desktop-nav">
                 <ul class="navbar-nav align-items-center">
-                    <!-- Search -->
+                    <!-- Search: only for customers and anonymous users -->
+                    {% if not user.is_authenticated or user.user_type == 'customer' %}
                     <li class="nav-item me-3">
                         <form method="GET" action="{% url 'catalog:product_list' %}" class="d-flex">
                             <div class="input-group" style="width: 300px;">
@@ -191,6 +192,7 @@
                             </div>
                         </form>
                     </li>
+                    {% endif %}
                     
                     <!-- Wishlist - Only for customers -->
                     {% if user.is_authenticated and is_customer %}

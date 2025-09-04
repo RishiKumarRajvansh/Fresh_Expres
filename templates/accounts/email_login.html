@@ -184,17 +184,14 @@
             <p><a href="{% url 'accounts:password_reset' %}">Forgot Password?</a></p>
             {% if user_type == 'store' %}
                 <p>New Store Owner? <a href="{% url 'accounts:store_register' %}">Register Your Store</a></p>
-                <p>Store Staff? <a href="{% url 'accounts:staff_login' %}">Staff Login</a></p>
             {% elif user_type == 'delivery' %}
                 <p>New Delivery Agent? <a href="{% url 'accounts:delivery_register' %}">Join Delivery Team</a></p>
             {% endif %}
             <p>Switch to: 
                 {% if user_type == 'store' %}
-                    <a href="{% url 'accounts:email_login' %}?type=delivery">Delivery Login</a> | 
-                    <a href="{% url 'accounts:staff_login' %}">Staff Login</a>
+                    <a href="{% url 'accounts:email_login' %}?type=delivery">Delivery Login</a>
                 {% elif user_type == 'delivery' %}
-                    <a href="{% url 'accounts:email_login' %}?type=store">Store Login</a> | 
-                    <a href="{% url 'accounts:staff_login' %}">Staff Login</a>
+                    <a href="{% url 'accounts:email_login' %}?type=store">Store Login</a>
                 {% else %}
                     <a href="{% url 'accounts:email_login' %}?type=store">Store Login</a> | 
                     <a href="{% url 'accounts:email_login' %}?type=delivery">Delivery Login</a>

@@ -50,6 +50,8 @@
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- Show product search / cart only to customers and anonymous users -->
+                    {% if not user.is_authenticated or user.user_type == 'customer' %}
                     <!-- Cart - Only for customers -->
                     {% if user.is_authenticated and user.user_type == 'customer' %}
                     <li class="nav-item">
@@ -74,7 +76,8 @@
                         </a>
                     </li>
                     {% endif %}
-                    
+                    {% endif %}
+
                     <!-- User Menu -->
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">

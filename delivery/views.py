@@ -23,9 +23,12 @@ class AgentDashboardView(DeliveryAgentRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
+        print(f"DEBUG Dashboard: User: {user.email}, User type: {user.user_type}")
+        
         try:
             # Get the delivery agent profile
             agent = DeliveryAgent.objects.get(user=user)
+            print(f"DEBUG Dashboard: Found agent: {agent.agent_id}")
             
             # Get dashboard statistics
             today_assignments = DeliveryAssignment.objects.filter(
@@ -38,23 +41,31 @@ class AgentDashboardView(DeliveryAgentRequiredMixin, TemplateView):
                 status__in=['assigned', 'accepted', 'picked_up', 'in_transit']
             ).select_related('order', 'order__user', 'order__store')
             
+            print(f"DEBUG Dashboard: Pending assignments count: {pending_assignments.count()}")
+            for assignment in pending_assignments:
+                print(f"  - Order: {assignment.order.order_number}, Status: {assignment.status}")
+            
             completed_assignments = DeliveryAssignment.objects.filter(
                 agent=agent,
                 status='delivered'
             )
             
+            total_assignments = DeliveryAssignment.objects.filter(agent=agent).count()
+            print(f"DEBUG Dashboard: Total assignments: {total_assignments}")
+            
             context.update({
                 'agent': agent,
                 'active_assignments': pending_assignments,
                 'stats': {
-                    'total_assignments': DeliveryAssignment.objects.filter(agent=agent).count(),
+                    'total_assignments': total_assignments,
                     'completed': completed_assignments.count(),
-                    'completion_rate': (completed_assignments.count() / max(1, DeliveryAssignment.objects.filter(agent=agent).count())) * 100,
+                    'completion_rate': (completed_assignments.count() / max(1, total_assignments)) * 100,
                     'avg_delivery_time': 45  # Placeholder - can be calculated from actual delivery times
                 }
             })
             
         except DeliveryAgent.DoesNotExist:
+            print(f"DEBUG Dashboard: No agent profile found for user {user.email}")
             context.update({
                 'agent': None,
                 'active_assignments': [],
@@ -88,20 +99,32 @@ class AgentOrdersView(DeliveryAgentRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            print(f"DEBUG: Looking for agent with user: {self.request.user.email} (id: {self.request.user.id})")
+            print(f"DEBUG Orders: Looking for agent with user: {self.request.user.email} (id: {self.request.user.id})")
+            
+            # Additional debug: check all agents
+            all_agents = DeliveryAgent.objects.all()
+            print(f"DEBUG Orders: Total agents in system: {all_agents.count()}")
+            for a in all_agents:
+                print(f"  - Agent {a.agent_id}: User {a.user.email} (ID: {a.user.id})")
+            
             agent = DeliveryAgent.objects.get(user=self.request.user)
-            print(f"DEBUG: Found agent: {agent.agent_id}")
+            print(f"DEBUG Orders: Found agent: {agent.agent_id}")
             context['agent'] = agent
             
             # Get counts for different statuses
             assignments = self.get_queryset()
+            print(f"DEBUG Orders: Assignments count: {assignments.count()}")
+            for assignment in assignments:
+                print(f"  - Assignment: Order {assignment.order.order_number}, Status: {assignment.status}")
+                
             context['pending_count'] = assignments.filter(status__in=['assigned', 'accepted']).count()
             context['active_count'] = assignments.filter(status__in=['picked_up', 'in_transit']).count()
             context['completed_count'] = assignments.filter(status='delivered').count()
             
-            print(f"DEBUG: Orders count: {len(assignments)}")
+            print(f"DEBUG Orders: Orders count: {len(assignments)}")
             
         except DeliveryAgent.DoesNotExist:
+            print(f"DEBUG Orders: No agent profile found for user {self.request.user.email} (ID: {self.request.user.id})")
             context['agent'] = None
             context['pending_count'] = 0
             context['active_count'] = 0

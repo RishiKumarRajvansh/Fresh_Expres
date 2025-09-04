@@ -119,6 +119,16 @@ class DeliveryAssignment(TimeStampedModel):
     def __str__(self):
         return f"Assignment: Order {self.order.order_number} -> {self.agent.user.get_full_name()}"
     
+    # Backwards compatibility: some modules reference `delivery_agent` instead of `agent`.
+    @property
+    def delivery_agent(self):
+        """Compatibility alias for the `agent` field."""
+        return self.agent
+
+    @delivery_agent.setter
+    def delivery_agent(self, value):
+        self.agent = value
+
     class Meta:
         ordering = ['-assigned_at']
 
