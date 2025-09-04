@@ -1,0 +1,265 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Loyalty Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Dynamic Loyalty Banners -->
+    {% for banner in loyalty_banners %}
+    <div class="alert alert-dismissible mb-3" style="background-color: {{ banner.background_color }}; color: {{ banner.text_color }}; border: none;">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <h6 class="alert-heading">{{ banner.title }}</h6>
+        <p class="mb-0">{{ banner.description }}</p>
+        {% if banner.offer_code %}
+        <div class="mt-2">
+            <small>Use code: </small>
+            <span class="badge bg-light text-dark" style="cursor: pointer;" onclick="copyToClipboard('{{ banner.offer_code }}')">
+                {{ banner.offer_code }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Loyalty Account Summary -->
+            <div class="card mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h4 class="mb-0">{{ loyalty_account.user.get_full_name|default:loyalty_account.user.username }}</h4>
+                            <p class="mb-0">{{ loyalty_account.current_tier }} Member</p>
+                            {% if config %}
+                            <small>Earning {{ config.points_per_rupee }} points per ₹1 × {{ loyalty_account.get_tier_multiplier }}x tier bonus</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h2 class="mb-0">{{ loyalty_account.available_points }}</h2>
+                            <p class="mb-0">Available Points</p>
+                        </div>
+                    </div>
+                    
+                    {% if next_tier_points > 0 %}
+                    <div class="mt-3">
+                        <small>{{ next_tier_points }} points to {{ next_tier }} tier</small>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: {{ progress_percent }}%"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mt-3">
+                        <small>🎉 You've reached the highest tier - Platinum!</small>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Available Rewards -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-gift me-2"></i>Available Rewards</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_rewards %}
+                    <div class="row">
+                        {% for reward in available_rewards %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6>{{ reward.title }}</h6>
+                                    <p class="text-muted small">{{ reward.description }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary">{{ reward.points_required }} Points</span>
+                                        <button class="btn btn-sm btn-success" onclick="redeemReward({{ reward.id }})">
+                                            Redeem
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No rewards available at your current point level.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Points</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if transaction.points > 0 %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ transaction.get_transaction_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if transaction.points > 0 %}+{% endif %}{{ transaction.points }}
+                                    </td>
+                                    <td>{{ transaction.reason }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'accounts:transaction_history' %}" class="btn btn-outline-primary">View All Transactions</a>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No transaction history yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Loyalty Stats -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5>Loyalty Stats</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <h4 class="text-success">{{ loyalty_account.lifetime_earned }}</h4>
+                            <small class="text-muted">Total Earned</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">{{ loyalty_account.lifetime_redeemed }}</h4>
+                            <small class="text-muted">Total Redeemed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier Benefits -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5>{{ loyalty_account.current_tier }} Benefits</h5>
+                    <ul class="list-unstyled">
+                        {% if loyalty_account.current_tier == 'Bronze' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Earn 1 point per ₹1</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Basic rewards access</li>
+                        {% elif loyalty_account.current_tier == 'Silver' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Earn 1.2 points per ₹1</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Priority support</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Exclusive silver rewards</li>
+                        {% elif loyalty_account.current_tier == 'Gold' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Earn 1.5 points per ₹1</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Free delivery on all orders</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Early access to sales</li>
+                        {% elif loyalty_account.current_tier == 'Platinum' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Earn 2 points per ₹1</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Dedicated account manager</li>
+                        <li><i class="fas fa-check text-success me-2"></i>VIP customer service</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Referral Program -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5><i class="fas fa-users me-2"></i>Refer Friends</h5>
+                    <p class="text-muted">Earn 100 points for each successful referral!</p>
+                    <a href="{% url 'accounts:referral_program' %}" class="btn btn-primary">
+                        Start Referring
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function redeemReward(rewardId) {
+    if (!confirm('Are you sure you want to redeem this reward?')) {
+        return;
+    }
+    
+    fetch(`/auth/loyalty/redeem/${rewardId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            // show error to user when redemption fails
+            alert(data.error || 'Unable to redeem reward at this time.');
+        }
+    })
+    .catch(error => {
+        console.error('Redeem request failed', error);
+        alert('Network error while redeeming reward. Please try again.');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const toast = document.createElement('div');
+        toast.innerText = `Coupon code "${text}" copied!`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }).catch(function() {
+        // Fallback for older browsers
+        alert(`Coupon code "${text}" copied!`);
+    });
+}
+</script>
+{% endblock %}

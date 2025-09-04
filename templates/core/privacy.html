@@ -1,0 +1,159 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-primary mb-4">Privacy Policy</h1>
+            <p class="text-muted">Last updated: August 20, 2025</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="privacy-content">
+                <section class="mb-4">
+                    <h3 class="text-primary">1. Information We Collect</h3>
+                    <p>We collect information you provide directly to us, such as when you:</p>
+                    <ul>
+                        <li>Create an account</li>
+                        <li>Place an order</li>
+                        <li>Contact customer service</li>
+                        <li>Subscribe to our newsletter</li>
+                        <li>Leave reviews or feedback</li>
+                    </ul>
+                    <p>This information may include:</p>
+                    <ul>
+                        <li>Name, email address, and phone number</li>
+                        <li>Delivery address and ZIP code</li>
+                        <li>Payment information</li>
+                        <li>Order history and preferences</li>
+                    </ul>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">2. How We Use Your Information</h3>
+                    <p>We use the information we collect to:</p>
+                    <ul>
+                        <li>Process and fulfill your orders</li>
+                        <li>Communicate with you about your orders</li>
+                        <li>Provide customer service and support</li>
+                        <li>Send you promotional communications (with your consent)</li>
+                        <li>Improve our services and user experience</li>
+                        <li>Comply with legal obligations</li>
+                    </ul>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">3. Information Sharing and Disclosure</h3>
+                    <p>We may share your information in the following situations:</p>
+                    <ul>
+                        <li><strong>With Store Partners:</strong> We share order information with the stores fulfilling your orders</li>
+                        <li><strong>With Delivery Partners:</strong> We share delivery information with our delivery agents</li>
+                        <li><strong>Service Providers:</strong> We work with third-party providers for payment processing, analytics, and customer support</li>
+                        <li><strong>Legal Requirements:</strong> We may disclose information if required by law or to protect our rights</li>
+                    </ul>
+                    <p>We do not sell your personal information to third parties.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">4. Data Security</h3>
+                    <p>We implement appropriate security measures to protect your personal information, including:</p>
+                    <ul>
+                        <li>Encryption of sensitive data</li>
+                        <li>Secure data transmission (HTTPS)</li>
+                        <li>Regular security assessments</li>
+                        <li>Limited access to personal information</li>
+                    </ul>
+                    <p>However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">5. Your Rights and Choices</h3>
+                    <p>You have the following rights regarding your personal information:</p>
+                    <ul>
+                        <li><strong>Access:</strong> You can request access to the personal information we have about you</li>
+                        <li><strong>Correction:</strong> You can update or correct your information through your account</li>
+                        <li><strong>Deletion:</strong> You can request deletion of your personal information</li>
+                        <li><strong>Opt-out:</strong> You can opt out of promotional communications</li>
+                        <li><strong>Data Portability:</strong> You can request a copy of your data in a portable format</li>
+                    </ul>
+                    <p>To exercise these rights, please contact us at <a href="mailto:privacy@freshmeatseafood.com">privacy@freshmeatseafood.com</a>.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">6. Cookies and Tracking Technologies</h3>
+                    <p>We use cookies and similar technologies to:</p>
+                    <ul>
+                        <li>Remember your preferences</li>
+                        <li>Keep you logged in</li>
+                        <li>Analyze site usage</li>
+                        <li>Provide personalized content</li>
+                    </ul>
+                    <p>You can control cookies through your browser settings, but disabling cookies may affect site functionality.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">7. Children's Privacy</h3>
+                    <p>Our services are not intended for children under 13. We do not knowingly collect personal information from children under 13. If we learn that we have collected such information, we will delete it promptly.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">8. Changes to This Policy</h3>
+                    <p>We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last updated" date.</p>
+                </section>
+
+                <section class="mb-4">
+                    <h3 class="text-primary">9. Contact Us</h3>
+                    <p>If you have any questions about this privacy policy or our data practices, please contact us:</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Email:</strong> <a href="mailto:privacy@freshmeatseafood.com">privacy@freshmeatseafood.com</a></li>
+                        <li><strong>Phone:</strong> <a href="tel:+1-800-MEAT-FISH">1-800-MEAT-FISH</a></li>
+                        <li><strong>Address:</strong> 123 Fresh Market Street, Food District, FD 12345</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="sticky-top" style="top: 20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action" onclick="scrollToSection('information-we-collect')">Information We Collect</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="scrollToSection('how-we-use')">How We Use Your Information</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="scrollToSection('information-sharing')">Information Sharing</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="scrollToSection('data-security')">Data Security</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="scrollToSection('your-rights')">Your Rights</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Need Help?</h6>
+                        <p class="card-text small">Have questions about your privacy?</p>
+                        <a href="{% url 'core:contact' %}" class="btn btn-primary btn-sm">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+</script>
+{% endblock %}

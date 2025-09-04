@@ -1,0 +1,284 @@
+{% extends 'dashboards/base_dashboard.html' %}
+{% load static %}
+
+{% block header_actions %}
+<a href="/admin/" class="btn btn-outline-light">
+    <i class="fas fa-cogs me-1"></i>Admin Panel
+</a>
+<a href="{% url 'admin:quick_actions' %}" class="btn btn-light">
+    <i class="fas fa-bolt me-1"></i>Quick Actions
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <!-- System Stats -->
+    <div class="col-12">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-info);">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ stats.total_orders }}</div>
+                <div class="stat-label">Total Orders</div>
+                <div class="mt-2">
+                    <small class="text-muted">+{{ stats.weekly_orders }} this week</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-success);">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                </div>
+                <div class="stat-number">₹{{ stats.weekly_revenue|floatformat:0 }}</div>
+                <div class="stat-label">Weekly Revenue</div>
+                <div class="mt-2">
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up me-1"></i>Weekly earnings
+                    </small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-warning);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ stats.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+                <div class="mt-2">
+                    <small class="text-muted">Registered customers</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-primary);">
+                        <i class="fas fa-store"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ stats.total_stores }}</div>
+                <div class="stat-label">Active Stores</div>
+                <div class="mt-2">
+                    <small class="text-muted">Partner stores</small>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-danger);">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ stats.total_products }}</div>
+                <div class="stat-label">Total Products</div>
+                <div class="mt-2">
+                    <small class="text-muted">In catalog</small>
+                </div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-warning);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ low_stock_products|length }}</div>
+                <div class="stat-label">Low Stock Alerts</div>
+                <div class="mt-2">
+                    <small class="text-warning">Need attention</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Management Actions -->
+    <div class="col-12">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-tachometer-alt me-2"></i>Quick Management
+            </div>
+            <div class="section-body">
+                <div class="quick-actions">
+                    <a href="/admin/orders/order/" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <span>Manage Orders</span>
+                    </a>
+                    
+                    <a href="/admin/catalog/product/" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <span>Manage Products</span>
+                    </a>
+                    
+                    <a href="/admin/stores/store/" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <span>Manage Stores</span>
+                    </a>
+                    
+                    <a href="/admin/accounts/user/" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span>Manage Users</span>
+                    </a>
+                    
+                    <a href="/admin/delivery/deliveryagent/" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <span>Delivery Agents</span>
+                    </a>
+                    
+                    <a href="{% url 'admin:analytics' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Orders -->
+    <div class="col-md-8">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-clock me-2"></i>Recent Orders
+            </div>
+            <div class="section-body">
+                {% if recent_orders %}
+                    {% for order in recent_orders %}
+                    <div class="list-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1rem;">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="fw-bold">
+                                    Order #{{ order.order_number|default:order.id }}
+                                </div>
+                                <div class="text-muted small">
+                                    {{ order.user.get_full_name|default:order.user.username }} • 
+                                    {{ order.created_at|timesince }} ago
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-success">₹{{ order.total_amount }}</div>
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                            <div class="mt-1">
+                                <a href="/admin/orders/order/{{ order.id }}/change/" class="btn btn-sm btn-outline-primary">
+                                    Manage
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <a href="/admin/orders/order/" class="btn btn-primary">
+                            View All Orders
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No recent orders</h5>
+                        <p class="text-muted">Orders will appear here as they come in</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Alerts -->
+    <div class="col-md-4">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-exclamation-triangle me-2"></i>System Alerts
+            </div>
+            <div class="section-body">
+                {% if low_stock_products %}
+
+                    {% for product in low_stock_products|slice:":5" %}
+                    <div class="list-item">
+                        <div>
+                            <div class="fw-bold">{{ product.product.name }}</div>
+                            <div class="text-muted small">{{ product.store.name }}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning">{{ product.stock_quantity }} left</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if low_stock_products|length > 5 %}
+                    <div class="text-center mt-2">
+                        <small class="text-muted">+{{ low_stock_products|length|add:"-5" }} more items</small>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-muted mb-0">All systems normal</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-chart-pie me-2"></i>Quick Insights
+            </div>
+            <div class="section-body">
+                <div class="list-item">
+                    <span>Orders This Week</span>
+                    <span class="fw-bold text-info">{{ stats.weekly_orders }}</span>
+                </div>
+                
+                <div class="list-item">
+                    <span>Active Stores</span>
+                    <span class="fw-bold text-success">{{ stats.total_stores }}</span>
+                </div>
+                
+                <div class="list-item">
+                    <span>Total Products</span>
+                    <span class="fw-bold text-primary">{{ stats.total_products }}</span>
+                </div>
+                
+                <div class="list-item">
+                    <span>Platform Users</span>
+                    <span class="fw-bold text-warning">{{ stats.total_users }}</span>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{% url 'admin:analytics' %}" class="btn btn-outline-primary w-100">
+                        View Detailed Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

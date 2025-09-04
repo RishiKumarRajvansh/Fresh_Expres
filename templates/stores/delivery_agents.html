@@ -1,0 +1,160 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Delivery Agents - {{ store.name }}{% endblock %}
+
+{% block store_content %}
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0">
+            <i class="fas fa-motorcycle me-2"></i>Delivery Agents
+        </h2>
+        <a href="{% url 'stores:dashboard' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Dashboard
+        </a>
+    </div>
+
+    <!-- Agent Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ available_agents.count }}</h3>
+                    <p class="mb-0">Available</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3>{{ unavailable_agents.count }}</h3>
+                    <p class="mb-0">Offline</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ agents.count }}</h3>
+                    <p class="mb-0">Total</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Agents -->
+    {% if available_agents %}
+    <div class="mb-4">
+        <h5 class="text-success">
+            <i class="fas fa-check-circle me-2"></i>Available Agents ({{ available_agents.count }})
+        </h5>
+        <div class="row">
+            {% for agent in available_agents %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ agent.user.get_full_name }}</h6>
+                                <small class="text-muted">{{ agent.user.email }}</small>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success">
+                                <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Online
+                            </span>
+                            {% if agent.user.phone_number %}
+                                <a href="tel:{{ agent.user.phone_number }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-phone"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Offline Agents -->
+    {% if unavailable_agents %}
+    <div class="mb-4">
+        <h5 class="text-warning">
+            <i class="fas fa-pause-circle me-2"></i>Offline Agents ({{ unavailable_agents.count }})
+        </h5>
+        <div class="row">
+            {% for agent in unavailable_agents %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ agent.user.get_full_name }}</h6>
+                                <small class="text-muted">{{ agent.user.email }}</small>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-warning">
+                                <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Offline
+                            </span>
+                            {% if agent.user.phone_number %}
+                                <a href="tel:{{ agent.user.phone_number }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-phone"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- No Agents -->
+    {% if not agents %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-motorcycle fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Delivery Agents</h5>
+            <p class="text-muted">No delivery agents are registered in the system yet.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Service Areas -->
+    {% if served_zip_areas %}
+    <div class="mt-4">
+        <h5><i class="fas fa-map-marker-alt me-2"></i>Service Areas</h5>
+        <div class="card">
+            <div class="card-body">
+                <p class="mb-2">Your store serves the following ZIP codes:</p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for zip_area in served_zip_areas %}
+                        <span class="badge bg-info">{{ zip_area.zip_code }} - {{ zip_area.area_name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,632 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Order Management - {{ store.name }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    border: 1px solid #f0f0f0;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    z-index: 1;
+}
+
+.stat-card-content {
+    position: relative;
+    z-index: 2;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 2rem;
+    opacity: 0.3;
+    z-index: 2;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-placed { background: #e3f2fd; color: #1565c0; }
+.status-confirmed { background: #e8f5e8; color: #2e7d32; }
+.status-preparing { background: #fff3e0; color: #ef6c00; }
+.status-packed { background: #f3e5f5; color: #7b1fa2; }
+.status-ready_for_pickup { background: #e0f2f1; color: #00695c; }
+.status-out_for_delivery { background: #e1f5fe; color: #0277bd; }
+.status-delivered { background: #e8f5e8; color: #388e3c; }
+.status-cancelled { background: #ffebee; color: #d32f2f; }
+
+.order-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    border-color: #ddd;
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.order-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    text-decoration: none;
+}
+
+.order-number:hover {
+    color: #007bff;
+}
+
+.order-meta {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.order-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.btn-action {
+    font-size: 0.875rem;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    border: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-prepare {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+
+.btn-pack {
+    background: linear-gradient(135deg, #6f42c1, #e83e8c);
+    color: white;
+}
+
+.btn-ready {
+    background: linear-gradient(135deg, #17a2b8, #20c997);
+    color: white;
+}
+
+.priority-high {
+    border-left: 4px solid #dc3545;
+}
+
+.priority-medium {
+    border-left: 4px solid #ffc107;
+}
+
+.priority-normal {
+    border-left: 4px solid #28a745;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.section-title i {
+    color: #007bff;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard-card {
+        padding: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .order-card {
+        padding: 1rem;
+    }
+    
+    .order-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+{% endblock %}
+
+{% block store_content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="fas fa-store me-2"></i>Order Management
+            </h1>
+            <p class="text-muted mb-0">{{ store.name }} • Today's Overview</p>
+        </div>
+        
+        <div class="btn-toolbar">
+            <a href="{% url 'stores:orders_list' %}" class="btn btn-primary me-2">
+                <i class="fas fa-list me-2"></i>View All Orders
+            </a>
+            <button class="btn btn-outline-secondary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Today's Statistics -->
+    <div class="quick-stats">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="fas fa-shopping-bag stat-icon"></i>
+            <div class="stat-card-content">
+                <div class="stat-number">{{ today_stats.total_orders }}</div>
+                <div class="stat-label">Total Orders Today</div>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <i class="fas fa-clock stat-icon"></i>
+            <div class="stat-card-content">
+                <div class="stat-number">{{ today_stats.pending_orders }}</div>
+                <div class="stat-label">Pending Orders</div>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <i class="fas fa-utensils stat-icon"></i>
+            <div class="stat-card-content">
+                <div class="stat-number">{{ today_stats.preparing_orders }}</div>
+                <div class="stat-label">Preparing Now</div>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <i class="fas fa-check-circle stat-icon"></i>
+            <div class="stat-card-content">
+                <div class="stat-number">{{ today_stats.completed_orders }}</div>
+                <div class="stat-label">Completed Today</div>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <i class="fas fa-rupee-sign stat-icon"></i>
+            <div class="stat-card-content">
+                <div class="stat-number">₹{{ today_stats.revenue|floatformat:0 }}</div>
+                <div class="stat-label">Today's Revenue</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Orders Requiring Attention -->
+        <div class="col-lg-8">
+            <div class="dashboard-card">
+                <h5 class="section-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Orders Requiring Attention
+                    <span class="badge bg-warning ms-2">{{ pending_orders|length }}</span>
+                </h5>
+                
+                {% if pending_orders %}
+                    <div class="order-list">
+                        {% for order in pending_orders %}
+                        <div class="order-card {% if order.created_at|timesince|slice:':1' == '0' %}priority-high{% elif order.created_at|timesince|slice:':2' == '1' %}priority-medium{% else %}priority-normal{% endif %}">
+                            <div class="order-card-header">
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'stores:order_detail' order.order_number %}" class="order-number">
+                                        {{ order.order_number }}
+                                    </a>
+                                    <div class="order-meta">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ order.user.get_full_name|default:order.user.email }}
+                                        • 
+                                        <i class="fas fa-rupee-sign me-1"></i>
+                                        ₹{{ order.total_amount }}
+                                        •
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ order.created_at|timesince }} ago
+                                    </div>
+                                    {% if order.delivery_instructions %}
+                                    <div class="order-meta">
+                                        <i class="fas fa-sticky-note me-1"></i>
+                                        {{ order.delivery_instructions|truncatechars:100 }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="text-end">
+                                    <span class="status-badge status-{{ order.status }}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                    {% if order.payment_status == 'pending' %}
+                                        <br><small class="text-danger mt-1 d-block">Payment Pending</small>
+                                    {% elif order.payment_status == 'failed' %}
+                                        <br><small class="text-danger mt-1 d-block">Payment Failed</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Actions -->
+                            <div class="order-actions">
+                                {% if order.status == 'placed' %}
+                                    <button class="btn btn-action btn-confirm" onclick="updateOrderStatus('{{ order.order_number }}', 'confirmed', 'Confirm Order')">
+                                        <i class="fas fa-check me-1"></i>Confirm
+                                    </button>
+                                {% elif order.status == 'confirmed' %}
+                                    <button class="btn btn-action btn-prepare" onclick="updateOrderStatus('{{ order.order_number }}', 'preparing', 'Start Preparing')">
+                                        <i class="fas fa-utensils me-1"></i>Start Preparing
+                                    </button>
+                                {% elif order.status == 'preparing' %}
+                                    <button class="btn btn-action btn-pack" onclick="updateOrderStatus('{{ order.order_number }}', 'packed', 'Mark as Packed')">
+                                        <i class="fas fa-box me-1"></i>Mark Packed
+                                    </button>
+                                {% elif order.status == 'packed' %}
+                                    <button class="btn btn-action btn-ready" onclick="updateOrderStatus('{{ order.order_number }}', 'ready_for_pickup', 'Ready for Pickup')">
+                                        <i class="fas fa-truck me-1"></i>Ready for Pickup
+                                    </button>
+                                {% endif %}
+                                
+                                <a href="{% url 'stores:order_detail' order.order_number %}" class="btn btn-outline-primary btn-action">
+                                    <i class="fas fa-eye me-1"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-check-double"></i>
+                        <h5>All caught up!</h5>
+                        <p class="text-muted">No orders require immediate attention.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Stats & Analytics -->
+        <div class="col-lg-4">
+            <!-- Status Overview -->
+            <div class="dashboard-card">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Order Status Overview
+                </h5>
+                
+                <div class="status-overview">
+                    {% for status_code, status_info in status_counts.items %}
+                        {% if status_info.count > 0 %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="status-badge status-{{ status_code }}">
+                                    {{ status_info.name }}
+                                </span>
+                            </div>
+                            <div>
+                                <strong>{{ status_info.count }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <h5 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Recent Orders
+                </h5>
+                
+                {% for order in recent_orders %}
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <a href="{% url 'stores:order_detail' order.order_number %}" class="text-decoration-none">
+                            <strong>{{ order.order_number }}</strong>
+                        </a>
+                        <br>
+                        <small class="text-muted">
+                            {{ order.user.get_full_name|default:order.user.email|truncatechars:25 }}
+                        </small>
+                        <br>
+                        <small class="text-muted">{{ order.created_at|timesince }} ago</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">₹{{ order.total_amount }}</div>
+                        <span class="status-badge status-{{ order.status }}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-3 text-muted">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p class="mb-0">No recent orders</p>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'stores:orders_list' %}" class="btn btn-outline-primary btn-sm">
+                        View All Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Update Order Status
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Order:</label>
+                    <div class="bg-light p-2 rounded">
+                        <strong id="modalOrderNumber"></strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">New Status:</label>
+                    <div class="bg-light p-2 rounded">
+                        <strong id="modalNewStatus"></strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="modalNotes" class="form-label fw-bold">Notes (Optional):</label>
+                    <textarea class="form-control" id="modalNotes" rows="3" 
+                              placeholder="Add any notes about this status change..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmStatusUpdate()">
+                    <i class="fas fa-save me-2"></i>Update Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentOrderNumber = '';
+let currentNewStatus = '';
+let currentActionTitle = '';
+
+function updateOrderStatus(orderNumber, newStatus, actionTitle) {
+    currentOrderNumber = orderNumber;
+    currentNewStatus = newStatus;
+    currentActionTitle = actionTitle;
+    
+    document.getElementById('modalOrderNumber').textContent = orderNumber;
+    document.getElementById('modalNewStatus').textContent = actionTitle;
+    document.getElementById('modalNotes').value = '';
+    
+    new bootstrap.Modal(document.getElementById('statusUpdateModal')).show();
+}
+
+function confirmStatusUpdate() {
+    const notes = document.getElementById('modalNotes').value.trim();
+    const updateButton = document.querySelector('#statusUpdateModal .btn-primary');
+    
+    updateButton.disabled = true;
+    updateButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+    
+    fetch(`/stores/api/orders/update-status/${currentOrderNumber}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            status: currentNewStatus,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateButton.disabled = false;
+        updateButton.innerHTML = '<i class="fas fa-save me-2"></i>Update Status';
+        
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('statusUpdateModal')).hide();
+            
+            // Show success message
+            showNotification(data.message, 'success');
+            
+            // Refresh the dashboard after a short delay
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        updateButton.disabled = false;
+        updateButton.innerHTML = '<i class="fas fa-save me-2"></i>Update Status';
+        console.error('Error:', error);
+        showNotification('An error occurred while updating the order status', 'error');
+    });
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
+    `;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getCsrfToken() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    
+    // Try to get from cookie if not in form
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return '';
+}
+
+// Add CSRF token if not present
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfToken);
+    }
+    
+    // Auto-refresh dashboard every 5 minutes
+    setInterval(refreshDashboard, 5 * 60 * 1000);
+});
+
+// Enable real-time updates via polling (can be enhanced with WebSocket)
+function startRealTimeUpdates() {
+    setInterval(() => {
+        fetch('/stores/api/orders/analytics/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update pending orders count
+                    const pendingCount = data.data.status_breakdown?.placed?.count || 0;
+                    // Update UI elements if needed
+                }
+            })
+            .catch(error => console.log('Real-time update failed:', error));
+    }, 30000); // Every 30 seconds
+}
+
+// Start real-time updates
+startRealTimeUpdates();
+</script>
+{% endblock %}

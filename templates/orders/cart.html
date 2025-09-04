@@ -1,0 +1,309 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart - Fresh Express{% endblock %}
+
+{% block content %}
+<!-- Cart Header -->
+<div class="cart-page">
+<div class="cart-page-header" style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; padding: 20px 0;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0" style="color: white !important;">
+                {% if carts and carts|length > 0 %}
+                    Shopping Cart ({{ total_quantity }} {{ total_quantity|pluralize:"item,items" }})
+                {% else %}
+                    Shopping Cart (0 items)
+                {% endif %}
+            </h1>
+            {% if carts and carts|length > 0 %}
+                <span class="cart-total" style="background: rgba(255,255,255,0.2); color: #FFEB3B !important; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 1.3rem;">₹{{ grand_total|floatformat:2 }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container cart-container">
+    {% csrf_token %}
+    
+    {% if carts and carts|length > 0 %}
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8 mb-4">
+                {% for cart in carts %}
+                <!-- Store Card -->
+                <div class="store-card">
+                    <div class="store-card-header">
+                        <div class="store-info">
+                            <i class="fas fa-store me-2"></i>
+                            <div>
+                                <h6 class="mb-0">{{ cart.store.name }}</h6>
+                                <small class="text-muted">{{ cart.store.location }}</small>
+                            </div>
+                        </div>
+                        <div class="store-actions">
+                            <span class="store-items-count">{{ cart.items.count }} {{ cart.items.count|pluralize:"item,items" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="store-card-body">
+                        {% for item in cart.items.all %}
+                        <div class="cart-item" data-item-id="{{ item.id }}">
+                            <div class="item-image">
+                                <div class="product-image">
+                                    {% if item.store_product.product.image %}
+                                        <img src="{{ item.store_product.product.image.url }}" 
+                                             alt="{{ item.store_product.product.name }}">
+                                    {% else %}
+                                        <div class="no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="item-details">
+                                <h6 class="item-name">{{ item.store_product.product.name }}</h6>
+                                <p class="item-price">₹{{ item.store_product.price|floatformat:2 }} per {{ item.store_product.product.unit }}</p>
+                                
+                                <div class="quantity-controls">
+                                    <div class="quantity-wrapper">
+                                        <button class="quantity-btn minus-btn" 
+                                                onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:'-1' }})"
+                                                {% if item.quantity <= 1 %}disabled{% endif %}>
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" 
+                                               class="quantity-input" 
+                                               value="{{ item.quantity }}" 
+                                               min="1" 
+                                               max="50"
+                                               onchange="updateQuantity({{ item.id }}, this.value)">
+                                        <button class="quantity-btn plus-btn" 
+                                                onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:'1' }})">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="item-actions">
+                                <div class="item-total">
+                                    <span class="total-price">₹{{ item.total_price|floatformat:2 }}</span>
+                                </div>
+                                <button class="remove-btn" onclick="removeItem({{ item.id }})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="cart-summary-card">
+                    <div class="summary-header">
+                        <h6>Order Summary</h6>
+                    </div>
+                    
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span>Subtotal ({{ total_quantity }} {{ total_quantity|pluralize:"item,items" }})</span>
+                            <span>₹{{ subtotal|floatformat:2 }}</span>
+                        </div>
+                        
+                        {% if delivery_fee > 0 %}
+                        <div class="summary-row">
+                            <span>Delivery Fee</span>
+                            <span>₹{{ delivery_fee|floatformat:2 }}</span>
+                        </div>
+                        {% else %}
+                        <div class="summary-row text-success">
+                            <span>Delivery Fee</span>
+                            <span>FREE</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if discount > 0 %}
+                        <div class="summary-row text-success">
+                            <span>Discount</span>
+                            <span>-₹{{ discount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <div class="summary-row total-row">
+                            <span>Total Amount</span>
+                            <span>₹{{ grand_total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-footer">
+                        {% if carts|length == 1 %}
+                            {% for cart in carts %}
+                            <div class="checkout-actions">
+                                {% if cart.store.store_code %}
+                                    <a href="{% url 'orders:checkout' cart.store.store_code %}" 
+                                       class="btn btn-success btn-lg checkout-btn w-100">
+                                        <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-secondary btn-lg w-100" disabled>
+                                        Store Temporarily Unavailable
+                                    </button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="checkout-message">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You have items from multiple stores. Checkout each store separately:
+                            </p>
+                            {% for cart in carts %}
+                            <div class="store-checkout mb-2">
+                                {% if cart.store.store_code %}
+                                    <a href="{% url 'orders:checkout' cart.store.store_code %}" 
+                                       class="btn btn-outline-success w-100">
+                                        Checkout {{ cart.store.name }} (₹{{ cart.total|floatformat:2 }})
+                                    </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <div class="continue-shopping mt-3">
+                            <a href="{% url 'catalog:product_list' %}" class="text-decoration-none">
+                                <button class="btn btn-outline-secondary" onclick="continueShopping()">
+                                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                                </button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Empty Cart -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-shopping-cart text-muted" style="font-size: 5rem;"></i>
+            </div>
+            <h3 class="h4 mb-3">Your cart is empty</h3>
+            <p class="text-muted mb-4">Add some delicious items to get started!</p>
+            <a href="{% url 'catalog:product_list' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+async function updateQuantity(itemId, newQuantity) {
+    try {
+    console.debug('cart.updateQuantity: sending POST', {cart_item_id: itemId, quantity: newQuantity});
+    const response = await fetch('/orders/cart/update/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                cart_item_id: itemId,
+                quantity: newQuantity
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Update navbar counters
+            if (window.updateNavbarCounts) {
+                window.updateNavbarCounts(data);
+            }
+            // Refresh page to show updated cart
+            location.reload();
+        } else {
+        }
+    } catch (error) {
+    }
+}
+
+async function removeItem(itemId) {
+    if (confirm('Remove this item from cart?')) {
+        try {
+            console.debug('cart.removeItem: sending POST', {cart_item_id: itemId});
+            const response = await fetch('/orders/cart/remove/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    cart_item_id: itemId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update navbar counters
+                if (window.updateNavbarCounts) {
+                    window.updateNavbarCounts(data);
+                }
+                // Refresh page to show updated cart
+                location.reload();
+            } else {
+            }
+        } catch (error) {
+        }
+    }
+}
+
+async function clearCart() {
+    if (confirm('Clear all items from cart?')) {
+        try {
+        console.debug('cart.clearCart: sending POST');
+        const response = await fetch('/orders/cart/clear/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+            }
+        } catch (error) {
+        }
+    }
+}
+
+function continueShopping() {
+    window.history.back();
+}
+
+function showToast(message, type='info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center ${type === 'danger' ? 'text-bg-danger' : type === 'success' ? 'text-bg-success' : 'text-bg-info'} border-0 position-fixed`;
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
+}
+</script>
+
+</div> <!-- Close cart-page div -->
+{% endblock %}

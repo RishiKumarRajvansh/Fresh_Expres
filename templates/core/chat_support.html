@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat Support - Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        max-width: 800px;
+        margin: 0 auto;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .chat-header .subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .message {
+        max-width: 80%;
+        padding: 12px 18px;
+        border-radius: 18px;
+        position: relative;
+        word-wrap: break-word;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .message.user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+
+    .message.bot {
+        background: white;
+        color: #333;
+        margin-right: auto;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .message .sender {
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .message.user .sender {
+        color: rgba(255,255,255,0.9);
+    }
+
+    .message.bot .sender {
+        color: #667eea;
+    }
+
+    .message .time {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 5px;
+    }
+
+    .chat-input {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    #messageInput {
+        flex: 1;
+        border: 2px solid #e9ecef;
+        border-radius: 25px;
+        padding: 12px 18px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    #messageInput:focus {
+        border-color: #667eea;
+    }
+
+    #sendButton {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #sendButton:hover {
+        transform: scale(1.05);
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: 10px;
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    .typing-dots {
+        display: inline-block;
+        position: relative;
+    }
+
+    .typing-dots::after {
+        content: '...';
+        animation: typing 1.5s infinite;
+    }
+
+    @keyframes typing {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60%, 100% { content: '...'; }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .quick-responses {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .quick-response {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 15px;
+        padding: 8px 15px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .quick-response:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .welcome-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+    .welcome-message h4 {
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .bot-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .chat-container {
+            height: 90vh;
+            margin: 10px;
+            border-radius: 10px;
+        }
+        
+        .message {
+            max-width: 90%;
+        }
+        
+        .quick-responses {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <h3>🍖 FreshBot Assistant 🐟</h3>
+            <div class="subtitle">Your intelligent helper for your fresh food needs</div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <div class="bot-avatar">🤖</div>
+                <h4>Welcome to Fresh Express!</h4>
+                <p>I'm FreshBot, your personal assistant. I can help you with:</p>
+                <div class="quick-responses">
+                    <span class="quick-response" onclick="sendQuickMessage('What products do you have?')">Products</span>
+                    <span class="quick-response" onclick="sendQuickMessage('Check my order status')">Order Status</span>
+                    <span class="quick-response" onclick="sendQuickMessage('Delivery information')">Delivery</span>
+                    <span class="quick-response" onclick="sendQuickMessage('Store locations')">Store Locations</span>
+                    <span class="quick-response" onclick="sendQuickMessage('Payment methods')">Payments</span>
+                    <span class="quick-response" onclick="sendQuickMessage('Recipe suggestions')">Recipes</span>
+                </div>
+                <p class="mt-3">Type a message or click on any topic above to get started!</p>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="bot-avatar">🤖</div>
+            FreshBot is typing<span class="typing-dots"></span>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Type your message here..." 
+                       onkeypress="handleKeyPress(event)">
+                <button id="sendButton" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let sessionId = null;
+
+function sendQuickMessage(message) {
+    document.getElementById('messageInput').value = message;
+    sendMessage();
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessage('user', 'You', message);
+    messageInput.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Send message to backend
+    fetch('{% url "core:chat_start" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `message=${encodeURIComponent(message)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTypingIndicator();
+        if (data.success) {
+            addMessage('bot', 'FreshBot', data.response);
+            sessionId = data.session_id;
+        } else {
+            addMessage('bot', 'FreshBot', 'Sorry, I encountered an error. Please try again.');
+        }
+    })
+    .catch(error => {
+        hideTypingIndicator();
+        addMessage('bot', 'FreshBot', 'Connection error. Please check your internet and try again.');
+    });
+}
+
+function addMessage(type, sender, message) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${type}`;
+    
+    const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    messageElement.innerHTML = `
+        ${type === 'bot' ? '<div class="bot-avatar">🤖</div>' : ''}
+        <div class="sender">${sender}</div>
+        <div>${message.replace(/\n/g, '<br>')}</div>
+        <div class="time">${currentTime}</div>
+    `;
+    
+    // Remove welcome message if it exists
+    const welcomeMessage = chatMessages.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        welcomeMessage.remove();
+    }
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'block';
+}
+
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'none';
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Auto-focus on message input
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('messageInput').focus();
+});
+</script>
+{% endblock %}

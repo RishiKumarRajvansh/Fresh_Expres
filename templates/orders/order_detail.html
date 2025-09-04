@@ -1,0 +1,216 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                </a>
+            </div>
+
+            <!-- Order Header -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 class="mb-1">Order #{{ order.order_number }}</h4>
+                            <small class="text-muted">Placed on {{ order.created_at|date:"F d, Y at g:i A" }}</small>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'confirmed' or order.status == 'preparing' %}primary{% elif order.status == 'packed' or order.status == 'ready_for_pickup' or order.status == 'handed_to_delivery' or order.status == 'out_for_delivery' %}info{% else %}warning{% endif %} fs-6">
+                                {{ order.get_customer_friendly_status }}
+                            </span>
+                            <div class="mt-2">
+                                <small class="text-muted">{{ order.get_status_description }}</small>
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'failed' %}danger{% else %}warning{% endif %}">
+                                    Payment: {{ order.get_payment_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Store Information</h6>
+                            <p class="mb-1"><strong>{{ order.store.name }}</strong></p>
+                            <p class="text-muted small">{{ order.store.address }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Delivery Information</h6>
+                            <p class="mb-1"><strong>{{ order.delivery_address.full_name }}</strong></p>
+                            <p class="text-muted small">
+                                {{ order.delivery_address.address_line_1 }}<br>
+                                {% if order.delivery_address.address_line_2 %}{{ order.delivery_address.address_line_2 }}<br>{% endif %}
+                                {{ order.delivery_address.city }}, {{ order.delivery_address.state }} - {{ order.delivery_address.pincode }}
+                            </p>
+                            {% if order.delivery_address.phone %}
+                            <p class="text-muted small">Phone: {{ order.delivery_address.phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Items ({{ order.items.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in order.items.all %}
+                    <div class="row mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                        <div class="col-2">
+                            {% if item.store_product.product.image %}
+                                <img src="{{ item.store_product.product.image.url }}" 
+                                     alt="{{ item.store_product.product.name }}" 
+                                     class="img-fluid rounded" 
+                                     style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mb-1">{{ item.store_product.product.name }}</h6>
+                            <p class="text-muted small mb-1">{{ item.store_product.product.category.name }}</p>
+                            {% if item.store_product.product.weight %}
+                            <p class="text-muted small">Weight: {{ item.store_product.product.weight }}{{ item.store_product.product.weight_unit }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-2 text-center">
+                            <p class="mb-1">Qty: {{ item.quantity }}</p>
+                            <p class="text-muted small">₹{{ item.price }} each</p>
+                        </div>
+                        <div class="col-2 text-end">
+                            <h6 class="mb-0">₹{{ item.total_price }}</h6>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No items found in this order.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-8">Subtotal:</div>
+                        <div class="col-4 text-end">₹{{ order.subtotal }}</div>
+                    </div>
+                    {% if order.delivery_fee > 0 %}
+                    <div class="row mb-2">
+                        <div class="col-8">Delivery Fee:</div>
+                        <div class="col-4 text-end">₹{{ order.delivery_fee }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.tax_amount > 0 %}
+                    <div class="row mb-2">
+                        <div class="col-8">Tax:</div>
+                        <div class="col-4 text-end">₹{{ order.tax_amount }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.discount_amount > 0 %}
+                    <div class="row mb-2 text-success">
+                        <div class="col-8">Discount:</div>
+                        <div class="col-4 text-end">-₹{{ order.discount_amount }}</div>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-8"><strong>Total Amount:</strong></div>
+                        <div class="col-4 text-end"><strong>₹{{ order.total_amount }}</strong></div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-8">Payment Method:</div>
+                        <div class="col-4 text-end">{{ order.get_payment_method_display }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Actions -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    {% if order.status == 'placed' or order.status == 'confirmed' %}
+                    <a href="{% url 'orders:cancel_order' order.order_number %}" class="btn btn-outline-danger me-2">
+                        <i class="fas fa-times me-2"></i>Cancel Order
+                    </a>
+                    {% endif %}
+                    
+                    {% if order.status == 'delivered' %}
+                    <a href="{% url 'orders:reorder' order.order_number %}" class="btn btn-primary me-2">
+                        <i class="fas fa-redo me-2"></i>Reorder
+                    </a>
+                    <a href="{% url 'orders:rate_order' order.order_number %}" class="btn btn-outline-warning me-2">
+                        <i class="fas fa-star me-2"></i>Rate Order
+                    </a>
+                    {% endif %}
+                    
+                    {% if order.status != 'cancelled' and order.status != 'refunded' %}
+                    <a href="{% url 'orders:order_tracking' order.order_number %}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-truck me-2"></i>Track Order
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Support/Help Button -->
+                    <a href="{% url 'orders:order_support' order.order_number %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-headset me-2"></i>Get Support
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estimated Delivery -->
+            {% if order.estimated_delivery_time %}
+            
+            {% endif %}
+
+            <!-- Delivery Slot -->
+            {% if order.delivery_slot %}
+            
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Order Confirmation Success Message -->
+{% if request.GET.success %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1000;';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Order placed successfully! You will receive updates via SMS.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

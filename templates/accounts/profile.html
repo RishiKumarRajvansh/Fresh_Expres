@@ -1,0 +1,71 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">My Account</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-user me-2"></i>Profile
+                        </a>
+                        {% if user.user_type == 'customer' %}
+                            <a href="{% url 'accounts:address_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-map-marker-alt me-2"></i>Addresses
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'orders:order_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-box me-2"></i>Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Profile Information</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="id_first_name" name="first_name" 
+                                           value="{{ user.first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="id_last_name" name="last_name" 
+                                           value="{{ user.last_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="id_email" name="email" 
+                                   value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="id_phone" name="phone_number" 
+                                   value="{{ user.phone_number }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

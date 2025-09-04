@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}🚚 Assign Delivery Agent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .assignment-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .agent-card {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .agent-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.15);
+    }
+    
+    .agent-card.selected {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #f8fff9 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="assignment-container">
+        <div class="text-center mb-4">
+            <h2>🚚 Assign Delivery Agent</h2>
+            <p class="text-muted">Select the best available agent for fast delivery</p>
+        </div>
+        
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if order %}
+            <!-- Order Information -->
+            <div class="card mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body">
+                    <h4>📦 {{ order.order_number }}</h4>
+                    <p>
+                        <i class="fas fa-clock me-1"></i> {{ order.created_at|timesince }} ago
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-rupee-sign me-1"></i> ₹{{ order.total_amount }}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-box me-1"></i> {{ order.items.count }} item{{ order.items.count|pluralize }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Available Agents -->
+            {% if available_agents %}
+                <h5 class="mb-3">Available Delivery Agents</h5>
+                <form method="post" id="assignmentForm">
+                    {% csrf_token %}
+                    
+                    {% for agent in available_agents %}
+                    <div class="agent-card" data-agent-id="{{ agent.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">{{ agent.user.get_full_name }}</h5>
+                                <p class="mb-1">
+                                    <small class="text-muted">
+                                        <i class="fas fa-phone me-1"></i> {{ agent.user.phone|default:"No phone" }}
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-star me-1"></i> Available
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button type="submit" name="agent_id" value="{{ agent.id }}" 
+                                        class="btn btn-success">
+                                    <i class="fas fa-check me-2"></i>Assign
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-truck-loading fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Available Agents</h5>
+                        <p class="text-muted">All agents are currently busy or offline</p>
+                    </div>
+                    {% endfor %}
+                </form>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-warning">No Agents Available</h5>
+                    <p class="text-muted">Please try again later or contact support</p>
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <h5 class="text-danger">Order Not Found</h5>
+                <p class="text-muted">The requested order could not be found</p>
+            </div>
+        {% endif %}
+        
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a href="{% url 'stores:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agent selection functionality
+    const agentCards = document.querySelectorAll('.agent-card');
+    
+    agentCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            agentCards.forEach(c => c.classList.remove('selected'));
+            // Add selected class to clicked card
+            this.classList.add('selected');
+        });
+    });
+});
+</script>
+{% endblock %}

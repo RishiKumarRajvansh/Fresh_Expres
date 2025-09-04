@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirm Delivery - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delivery-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .order-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .customer-info {
+        background: #e3f2fd;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .otp-input {
+        font-size: 2rem;
+        text-align: center;
+        letter-spacing: 0.5rem;
+        padding: 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .btn-deliver {
+        background: #ff6b35;
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        width: 100%;
+        cursor: pointer;
+    }
+    
+    .btn-deliver:hover {
+        background: #e55a2b;
+    }
+    
+    .btn-deliver:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+    
+    .status-picked_up { background: #fff3cd; color: #856404; }
+    .status-delivered { background: #d4edda; color: #155724; }
+    
+    .alert {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 5px;
+    }
+    
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    
+    .delivery-tips {
+        background: #f0f8ff;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        border: 1px solid #b3d9ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="delivery-container">
+        <div class="text-center mb-4">
+            <h2>📦 Confirm Delivery</h2>
+            <p class="text-muted">Get delivery confirmation code from customer</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if order and assignment %}
+            <div class="order-info">
+                <h4>Order Details</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Order Number:</strong><br>
+                        <span class="text-primary">{{ order.order_number }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        <span class="status-badge status-{{ assignment.status }}">
+                            {{ assignment.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Total Amount:</strong><br>
+                        ₹{{ order.total_amount }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Payment Status:</strong><br>
+                        <span class="badge badge-{% if order.payment_status == 'paid' %}success{% else %}warning{% endif %}">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if assignment.picked_up_at %}
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <strong>Picked up at:</strong><br>
+                        <small class="text-muted">{{ assignment.picked_up_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="customer-info">
+                <h5>👤 Customer Information</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Name:</strong><br>
+                        {{ order.user.get_full_name|default:order.user.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Phone:</strong><br>
+                        <a href="tel:{{ order.phone }}" class="btn btn-sm btn-outline-primary">
+                            📞 {{ order.phone }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <strong>Delivery Address:</strong><br>
+                        {{ order.delivery_address }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if assignment.status == 'picked_up' %}
+                <div class="delivery-form">
+                    <form id="deliveryForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="delivery_code"><strong>Customer Delivery Code:</strong></label>
+                            <input type="text" 
+                                   id="delivery_code" 
+                                   name="delivery_code"
+                                   class="form-control otp-input" 
+                                   placeholder="Enter 6-digit code"
+                                   maxlength="6"
+                                   pattern="[0-9]{6}"
+                                   required>
+                            <small class="form-text text-muted">
+                                Ask the customer for their delivery confirmation code
+                            </small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-deliver" id="deliverBtn">
+                            <span id="btnText">✅ Confirm Delivery</span>
+                            <span id="btnSpinner" class="d-none">
+                                <i class="fa fa-spinner fa-spin"></i> Processing...
+                            </span>
+                        </button>
+                    </form>
+                    
+                    <div class="delivery-tips">
+                        <h6>📋 Delivery Checklist:</h6>
+                        <ul class="mb-0">
+                            <li>Verify customer identity</li>
+                            <li>Check order contents with customer</li>
+                            <li>Collect payment if COD</li>
+                            <li>Get delivery confirmation code</li>
+                            <li>Thank the customer!</li>
+                        </ul>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h5>⚠️ Order Not Ready for Delivery</h5>
+                    <p>This order has not been picked up from the store yet. Please complete the handover process first.</p>
+                    <a href="{% url 'delivery:agent_handover' order.order_number %}" class="btn btn-primary">
+                        Go to Handover
+                    </a>
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-danger">
+                <h5>Error</h5>
+                <p>Unable to load order information. Please contact support.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-format OTP input
+    $('#delivery_code').on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    // Handle form submission
+    $('#deliveryForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const deliveryCode = $('#delivery_code').val();
+        if (deliveryCode.length !== 6) {
+            alert('Please enter a valid 6-digit code');
+            return;
+        }
+        
+        // Confirm delivery
+        if (!confirm('Are you sure you want to confirm this delivery? This action cannot be undone.')) {
+            return;
+        }
+        
+        // Disable button and show spinner
+        $('#deliverBtn').prop('disabled', true);
+        $('#btnText').addClass('d-none');
+        $('#btnSpinner').removeClass('d-none');
+        
+        // Submit via AJAX
+        $.ajax({
+            url: "{% url 'delivery:confirm_delivery_otp' order.order_number %}",
+            method: 'POST',
+            data: {
+                'delivery_code': deliveryCode,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success and redirect
+                    alert('🎉 ' + response.message + '\n\nThank you for completing this delivery!');
+                    window.location.href = "{% url 'delivery:agent_dashboard' %}";
+                } else {
+                    alert('❌ ' + response.message);
+                    // Reset button
+                    $('#deliverBtn').prop('disabled', false);
+                    $('#btnText').removeClass('d-none');
+                    $('#btnSpinner').addClass('d-none');
+                }
+            },
+            error: function() {
+                alert('Network error. Please try again.');
+                // Reset button
+                $('#deliverBtn').prop('disabled', false);
+                $('#btnText').removeClass('d-none');
+                $('#btnSpinner').addClass('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

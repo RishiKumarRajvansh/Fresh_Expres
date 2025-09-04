@@ -1,0 +1,578 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Customer Delivery - Order #{{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --appetite-red: #D32F2F;
+        --meat-burgundy: #8B0000;
+        --fresh-orange: #FF6B35;
+        --golden-spice: #FFA726;
+    }
+    
+    .delivery-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .delivery-header {
+        background: linear-gradient(135deg, var(--appetite-red), var(--meat-burgundy));
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .order-info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .order-number {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: var(--appetite-red);
+        margin-bottom: 15px;
+    }
+    
+    .customer-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .customer-name {
+        font-weight: bold;
+        color: var(--appetite-red);
+        margin-bottom: 5px;
+        font-size: 1.1em;
+    }
+    
+    .customer-phone {
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    .delivery-address {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        line-height: 1.4;
+    }
+    
+    .otp-generate-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .generate-btn {
+        background: var(--golden-spice);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        max-width: 300px;
+        transition: background 0.3s ease;
+    }
+    
+    .generate-btn:hover:not(:disabled) {
+        background: #f57c00;
+    }
+    
+    .generate-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .otp-display {
+        background: #e8f5e8;
+        border: 2px solid #4CAF50;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+        display: none;
+    }
+    
+    .otp-code {
+        font-size: 2em;
+        font-weight: bold;
+        letter-spacing: 0.3em;
+        color: var(--appetite-red);
+        font-family: monospace;
+        margin: 10px 0;
+    }
+    
+    .otp-verify-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        display: none;
+    }
+    
+    .otp-title {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: var(--appetite-red);
+        margin-bottom: 15px;
+    }
+    
+    .otp-instructions {
+        color: #666;
+        margin-bottom: 25px;
+        line-height: 1.5;
+    }
+    
+    .otp-input {
+        width: 100%;
+        max-width: 200px;
+        padding: 15px;
+        font-size: 1.5em;
+        text-align: center;
+        letter-spacing: 0.5em;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-family: monospace;
+    }
+    
+    .otp-input:focus {
+        outline: none;
+        border-color: var(--fresh-orange);
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+    
+    .confirm-btn {
+        background: var(--appetite-red);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        max-width: 250px;
+        transition: background 0.3s ease;
+    }
+    
+    .confirm-btn:hover:not(:disabled) {
+        background: var(--meat-burgundy);
+    }
+    
+    .confirm-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .status-message {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    
+    .status-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .workflow-steps {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .step-item:last-child {
+        border-bottom: none;
+    }
+    
+    .step-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .step-current {
+        background: var(--appetite-red);
+        animation: pulse 2s infinite;
+    }
+    
+    .step-completed {
+        background: #4CAF50;
+    }
+    
+    .step-pending {
+        background: #ddd;
+        color: #666;
+    }
+    
+    .contact-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-call {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .btn-navigate {
+        background: #9C27B0;
+        color: white;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+        .delivery-container {
+            padding: 15px;
+        }
+        
+        .contact-actions {
+            flex-direction: column;
+        }
+        
+        .otp-code {
+            font-size: 1.5em;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delivery-container">
+    <div class="delivery-header">
+        <h1><i class="fas fa-shipping-fast me-2"></i>Customer Delivery</h1>
+        <p>Complete delivery with OTP verification</p>
+    </div>
+
+    <!-- Order Information -->
+    <div class="order-info-card">
+        <div class="order-number">#{{ order.order_number }}</div>
+        
+        <div class="customer-info">
+            <div class="customer-name">
+                <i class="fas fa-user me-2"></i>{{ customer.get_full_name|default:customer.username }}
+            </div>
+            {% if customer.phone %}
+            <div class="customer-phone">
+                <i class="fas fa-phone me-2"></i>{{ customer.phone }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if delivery_address %}
+        <div class="delivery-address">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            {{ delivery_address.address_line_1 }}
+            {% if delivery_address.address_line_2 %}
+                <br>{{ delivery_address.address_line_2 }}
+            {% endif %}
+            <br>{{ delivery_address.city }}, {{ delivery_address.state }} {{ delivery_address.zip_code }}
+        </div>
+        {% endif %}
+
+        <!-- Contact Actions -->
+        <div class="contact-actions mt-3">
+            {% if customer.phone %}
+            <a href="tel:{{ customer.phone }}" class="action-btn btn-call">
+                <i class="fas fa-phone"></i>Call Customer
+            </a>
+            {% endif %}
+            {% if delivery_address %}
+            <a href="https://maps.google.com/maps?daddr={{ delivery_address.address_line_1 }}, {{ delivery_address.city }}" 
+               target="_blank" class="action-btn btn-navigate">
+                <i class="fas fa-directions"></i>Navigate
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Workflow Steps -->
+    <div class="workflow-steps">
+        <h6 class="mb-3"><i class="fas fa-route me-2"></i>Delivery Workflow</h6>
+        
+        <div class="step-item">
+            <div class="step-icon step-completed">1</div>
+            <div>Order Packed at Store</div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-icon step-completed">2</div>
+            <div>Store Handover Completed</div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-icon step-completed">3</div>
+            <div>Out for Delivery</div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-icon step-current">4</div>
+            <div><strong>Customer Delivery (OTP)</strong> - Current Step</div>
+        </div>
+        
+        <div class="step-item">
+            <div class="step-icon step-pending">5</div>
+            <div>Delivered ✅</div>
+        </div>
+    </div>
+
+    <!-- Step 1: Generate OTP for Customer -->
+    <div class="otp-generate-section" id="generateSection">
+        <div class="otp-title">Generate Delivery OTP</div>
+        <div class="otp-instructions">
+            Click the button below to generate a 4-digit OTP for the customer.
+            The customer will receive the OTP and provide it to you for delivery confirmation.
+        </div>
+        
+        <button id="generateOtpBtn" class="generate-btn">
+            <i class="fas fa-key me-2"></i>Generate Customer OTP
+        </button>
+    </div>
+
+    <!-- Step 2: Display Generated OTP -->
+    <div class="otp-display" id="otpDisplay">
+        <div class="otp-title">Customer OTP Generated</div>
+        <div class="otp-instructions">
+            Share this OTP with the customer. They will provide it back to you for delivery confirmation.
+        </div>
+        
+        <div class="otp-code" id="generatedOtp">----</div>
+        
+        <button id="proceedToVerifyBtn" class="generate-btn">
+            <i class="fas fa-arrow-right me-2"></i>Ready to Verify
+        </button>
+    </div>
+
+    <!-- Step 3: Verify Customer OTP -->
+    <div class="otp-verify-section" id="verifySection">
+        <div class="otp-title">Verify Customer OTP</div>
+        
+        <div class="otp-instructions">
+            Enter the 4-digit OTP provided by the customer to complete the delivery.
+        </div>
+
+        <form id="verifyForm">
+            {% csrf_token %}
+            <input type="text" 
+                   id="otpInput" 
+                   class="otp-input" 
+                   placeholder="0000" 
+                   maxlength="4" 
+                   pattern="[0-9]{4}"
+                   autocomplete="off">
+            
+            <br>
+            
+            <button type="submit" class="confirm-btn" id="confirmBtn">
+                <i class="fas fa-check-circle me-2"></i>Complete Delivery
+            </button>
+
+            <div class="mt-3">
+                <label for="notesInput" class="form-label">Delivery Notes (Optional)</label>
+                <textarea id="notesInput" class="form-control" rows="2" placeholder="Any special notes about the delivery..."></textarea>
+            </div>
+        </form>
+
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-4 text-center">
+        <small class="text-muted">
+            Having trouble? Call support: <strong>1800-FRESH-0</strong>
+        </small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateSection = document.getElementById('generateSection');
+    const otpDisplay = document.getElementById('otpDisplay');
+    const verifySection = document.getElementById('verifySection');
+    const generateOtpBtn = document.getElementById('generateOtpBtn');
+    const generatedOtp = document.getElementById('generatedOtp');
+    const proceedToVerifyBtn = document.getElementById('proceedToVerifyBtn');
+    const verifyForm = document.getElementById('verifyForm');
+    const otpInput = document.getElementById('otpInput');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const notesInput = document.getElementById('notesInput');
+
+    // Generate OTP
+    generateOtpBtn.addEventListener('click', function() {
+        generateOtpBtn.disabled = true;
+        generateOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+
+        fetch(`/delivery/generate-otp/{{ order.order_id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: 'type=customer_delivery'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                generatedOtp.textContent = data.otp;
+                generateSection.style.display = 'none';
+                otpDisplay.style.display = 'block';
+            } else {
+                alert('Failed to generate OTP: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Network error. Please try again.');
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            generateOtpBtn.disabled = false;
+            generateOtpBtn.innerHTML = '<i class="fas fa-key me-2"></i>Generate Customer OTP';
+        });
+    });
+
+    // Proceed to verify
+    proceedToVerifyBtn.addEventListener('click', function() {
+        otpDisplay.style.display = 'none';
+        verifySection.style.display = 'block';
+        otpInput.focus();
+    });
+
+    // Only allow numbers in OTP input
+    otpInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // Handle verification form submission
+    verifyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const otp = otpInput.value.trim();
+        const notes = notesInput.value.trim();
+        
+        if (otp.length !== 4) {
+            showStatus('Please enter a 4-digit OTP', 'error');
+            return;
+        }
+
+        // Show loading state
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirming...';
+        
+        // Verify OTP
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `otp=${otp}&notes=${encodeURIComponent(notes)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatus(data.message, 'success');
+                setTimeout(() => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.href = '/delivery/orders/';
+                    }
+                }, 3000);
+            } else {
+                showStatus(data.message, 'error');
+                otpInput.value = '';
+                otpInput.focus();
+            }
+        })
+        .catch(error => {
+            showStatus('Network error. Please try again.', 'error');
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Complete Delivery';
+        });
+    });
+
+    function showStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message status-${type}`;
+        statusMessage.style.display = 'block';
+        
+        if (type === 'error') {
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Manage ZIP Coverage - {{ store.name }}{% endblock %}
+
+{% block store_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-map-marker-alt me-2 text-primary"></i>Manage ZIP Coverage Areas</h2>
+                <a href="{% url 'stores:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                <!-- Current Coverage -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Current Coverage Areas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_coverage %}
+                                <div class="row">
+                                    {% for coverage in current_coverage %}
+                                        <div class="col-6 mb-2">
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-location-arrow me-1"></i>
+                                                {{ coverage.zip_area.zip_code }}
+                                            </span>
+                                            <small class="text-muted d-block">
+                                                {{ coverage.zip_area.area_name|default:"" }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-map-marked-alt fa-2x mb-2"></i>
+                                    <p>No ZIP areas selected yet.</p>
+                                    <p class="small">Select ZIP areas below to start delivering to customers.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZIP Selection Form -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>
+                                Update Coverage Areas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>Select ZIP Areas to Serve:</strong>
+                                    </label>
+                                    <div class="form-text mb-3">
+                                        {{ form.zip_areas.help_text }}
+                                    </div>
+                                    
+                                    <div class="zip-areas-grid" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                                        {% for checkbox in form.zip_areas %}
+                                            <div class="form-check mb-2">
+                                                {{ checkbox.tag }}
+                                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                                    <strong>{{ checkbox.choice_label }}</strong>
+                                                    {% comment %} You can add area names here if available {% endcomment %}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>
+                                        Update Coverage Areas
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2 text-info"></i>
+                        How ZIP Coverage Works
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-map-marker-alt fa-2x text-primary mb-2"></i>
+                                <h6>Select Areas</h6>
+                                <p class="small text-muted">Choose the ZIP codes where you want to deliver your products.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-eye fa-2x text-success mb-2"></i>
+                                <h6>Customer Visibility</h6>
+                                <p class="small text-muted">Customers in selected areas will see your products in search results.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-truck fa-2x text-warning mb-2"></i>
+                                <h6>Delivery Optimization</h6>
+                                <p class="small text-muted">Only delivery agents serving these areas will receive orders from your store.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.zip-areas-grid {
+    background-color: #f8f9fa;
+}
+
+.form-check {
+    padding-left: 1.5em;
+}
+
+.badge {
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}

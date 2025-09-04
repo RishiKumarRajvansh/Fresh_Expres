@@ -1,0 +1,470 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}My Orders - Delivery Agent{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --appetite-red: #D32F2F;
+        --meat-burgundy: #8B0000;
+        --fresh-orange: #FF6B35;
+        --golden-spice: #FFA726;
+    }
+    
+    .orders-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .orders-header {
+        background: linear-gradient(135deg, var(--appetite-red), var(--meat-burgundy));
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .status-tabs {
+        display: flex;
+        background: white;
+        border-radius: 12px;
+        padding: 5px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .status-tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+    }
+    
+    .status-tab.active {
+        background: var(--fresh-orange);
+        color: white;
+    }
+    
+    .status-tab:not(.active):hover {
+        background: #f5f5f5;
+    }
+    
+    .orders-grid {
+        display: grid;
+        gap: 20px;
+    }
+    
+    .order-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        border-left: 5px solid var(--fresh-orange);
+        transition: transform 0.2s ease;
+    }
+    
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .order-card.assigned {
+        border-left-color: var(--golden-spice);
+    }
+    
+    .order-card.accepted {
+        border-left-color: #2196F3;
+    }
+    
+    .order-card.picked_up {
+        border-left-color: #FF9800;
+    }
+    
+    .order-card.in_transit {
+        border-left-color: #9C27B0;
+    }
+    
+    .order-card.delivered {
+        border-left-color: #4CAF50;
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .order-number {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: var(--appetite-red);
+    }
+    
+    .order-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-assigned {
+        background: #FFF3C4;
+        color: #F57C00;
+    }
+    
+    .status-accepted {
+        background: #E3F2FD;
+        color: #1976D2;
+    }
+    
+    .status-picked_up {
+        background: #FFF3E0;
+        color: #F57C00;
+    }
+    
+    .status-in_transit {
+        background: #F3E5F5;
+        color: #7B1FA2;
+    }
+    
+    .status-delivered {
+        background: #E8F5E8;
+        color: #388E3C;
+    }
+    
+    .order-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .detail-label {
+        font-size: 0.85em;
+        color: #666;
+        font-weight: 600;
+    }
+    
+    .detail-value {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .customer-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .customer-name {
+        font-weight: bold;
+        color: var(--appetite-red);
+        margin-bottom: 5px;
+    }
+    
+    .customer-phone {
+        color: #666;
+        font-size: 0.9em;
+    }
+    
+    .delivery-address {
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        line-height: 1.4;
+    }
+    
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .action-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        text-align: center;
+        font-size: 0.9em;
+    }
+    
+    .btn-accept {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-accept:hover {
+        background: #45a049;
+    }
+    
+    .btn-pickup {
+        background: #FF9800;
+        color: white;
+    }
+    
+    .btn-pickup:hover {
+        background: #F57C00;
+    }
+    
+    .btn-deliver {
+        background: var(--appetite-red);
+        color: white;
+    }
+    
+    .btn-deliver:hover {
+        background: var(--meat-burgundy);
+    }
+    
+    .btn-call {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .btn-call:hover {
+        background: #1976D2;
+    }
+    
+    .btn-navigate {
+        background: #9C27B0;
+        color: white;
+    }
+    
+    .btn-navigate:hover {
+        background: #7B1FA2;
+    }
+    
+    .no-orders {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    
+    .no-orders i {
+        font-size: 4em;
+        margin-bottom: 20px;
+        color: #ddd;
+    }
+    
+    .no-orders h3 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    @media (max-width: 768px) {
+        .orders-container {
+            padding: 15px;
+        }
+        
+        .order-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .order-actions {
+            flex-direction: column;
+        }
+        
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <div class="orders-header">
+        <h1><i class="fas fa-clipboard-list me-2"></i>My Orders</h1>
+        <p>Manage your delivery assignments</p>
+    </div>
+
+    <!-- Status Summary -->
+    <div class="status-tabs">
+        <button class="status-tab active" onclick="filterOrders('all')">
+            All <span class="badge">({{ orders.count }})</span>
+        </button>
+        <button class="status-tab" onclick="filterOrders('pending')">
+            Pending <span class="badge">({{ pending_count }})</span>
+        </button>
+        <button class="status-tab" onclick="filterOrders('active')">
+            Active <span class="badge">({{ active_count }})</span>
+        </button>
+        <button class="status-tab" onclick="filterOrders('completed')">
+            Completed <span class="badge">({{ completed_count }})</span>
+        </button>
+    </div>
+
+    <!-- Debug Info -->
+    {% if user.is_authenticated %}
+    <div class="alert alert-info">
+        <strong>Debug Info:</strong><br>
+        User: {{ user.email }} ({{ user.user_type }})<br>
+        Agent: {{ agent.agent_id|default:"No agent profile" }}<br>
+        Orders Count: {{ orders|length }}<br>
+        Available: {{ agent.is_available|default:"N/A" }}
+    </div>
+    {% endif %}
+
+    <!-- Orders List -->
+    <div class="orders-grid" id="orders-container">
+        {% for assignment in orders %}
+        <div class="order-card {{ assignment.status }}" data-status="{{ assignment.status }}">
+            <div class="order-header">
+                <div class="order-number">#{{ assignment.order.order_number }}</div>
+                <div class="order-status status-{{ assignment.status }}">
+                    {{ assignment.get_status_display }}
+                </div>
+            </div>
+
+            <div class="customer-info">
+                <div class="customer-name">
+                    <i class="fas fa-user me-2"></i>{{ assignment.order.user.get_full_name|default:assignment.order.user.username }}
+                </div>
+                {% if assignment.order.user.phone_number %}
+                <div class="customer-phone">
+                    <i class="fas fa-phone me-2"></i>
+                    <a href="tel:{{ assignment.order.user.phone_number }}" style="color: inherit; text-decoration: none;">
+                        {{ assignment.order.user.phone_number }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if assignment.order.delivery_address %}
+            <div class="delivery-address">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                <strong>Delivery Address:</strong><br>
+                {% if assignment.order.delivery_address.full_address %}
+                    {{ assignment.order.delivery_address.full_address }}
+                {% else %}
+                    {{ assignment.order.delivery_address.address_line_1 }}
+                    {% if assignment.order.delivery_address.address_line_2 %}
+                        <br>{{ assignment.order.delivery_address.address_line_2 }}
+                    {% endif %}
+                    <br>{{ assignment.order.delivery_address.city }}, {{ assignment.order.delivery_address.state }} {{ assignment.order.delivery_address.zip_code }}
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if assignment.order.delivery_instructions %}
+            <div class="delivery-instructions">
+                <i class="fas fa-sticky-note me-2"></i>
+                <strong>Instructions:</strong> {{ assignment.order.delivery_instructions }}
+            </div>
+            {% endif %}
+
+            <div class="order-details">
+                <div class="detail-item">
+                    <div class="detail-label">Order Total</div>
+                    <div class="detail-value">₹{{ assignment.order.total_amount }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Payment Method</div>
+                    <div class="detail-value">{{ assignment.order.get_payment_method_display }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Assigned At</div>
+                    <div class="detail-value">{{ assignment.assigned_at|date:"M d, H:i" }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Store</div>
+                    <div class="detail-value">{{ assignment.order.store.name }}</div>
+                </div>
+            </div>
+
+            <div class="order-actions">
+                {% if assignment.status == 'assigned' %}
+                    <a href="{% url 'delivery:accept_order' assignment.id %}" class="action-btn btn-accept">
+                        <i class="fas fa-check me-2"></i>Accept Order
+                    </a>
+                {% elif assignment.status == 'accepted' %}
+                    <a href="{% url 'delivery:agent_handover_confirm' assignment.order.order_id %}" class="action-btn btn-pickup">
+                        <i class="fas fa-handshake me-2"></i>Store Handover (OTP)
+                    </a>
+                {% elif assignment.status == 'picked_up' or assignment.status == 'in_transit' %}
+                    <a href="{% url 'delivery:customer_delivery_confirm' assignment.order.order_id %}" class="action-btn btn-deliver">
+                        <i class="fas fa-shipping-fast me-2"></i>Customer Delivery (OTP)
+                    </a>
+                {% endif %}
+
+                {% if assignment.order.user.phone %}
+                <a href="tel:{{ assignment.order.user.phone }}" class="action-btn btn-call">
+                    <i class="fas fa-phone me-2"></i>Call Customer
+                </a>
+                {% endif %}
+
+                {% if assignment.order.delivery_address %}
+                <a href="https://maps.google.com/maps?daddr={{ assignment.order.delivery_address.address_line_1 }}, {{ assignment.order.delivery_address.city }}" 
+                   target="_blank" class="action-btn btn-navigate">
+                    <i class="fas fa-directions me-2"></i>Navigate
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-orders">
+            <i class="fas fa-truck"></i>
+            <h3>No Orders Found</h3>
+            <p>You don't have any delivery assignments yet.</p>
+            {% if agent.is_available %}
+                <p class="text-success">You're online and ready to receive orders!</p>
+            {% else %}
+                <p class="text-warning">Set your status to ONLINE in the dashboard to start receiving orders.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterOrders(status) {
+    const cards = document.querySelectorAll('.order-card');
+    const tabs = document.querySelectorAll('.status-tab');
+    
+    // Update active tab
+    tabs.forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter cards
+    cards.forEach(card => {
+        if (status === 'all') {
+            card.style.display = 'block';
+        } else if (status === 'pending') {
+            const cardStatus = card.getAttribute('data-status');
+            card.style.display = ['assigned', 'accepted'].includes(cardStatus) ? 'block' : 'none';
+        } else if (status === 'active') {
+            const cardStatus = card.getAttribute('data-status');
+            card.style.display = ['picked_up', 'in_transit'].includes(cardStatus) ? 'block' : 'none';
+        } else if (status === 'completed') {
+            const cardStatus = card.getAttribute('data-status');
+            card.style.display = cardStatus === 'delivered' ? 'block' : 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

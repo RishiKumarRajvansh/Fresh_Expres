@@ -1,0 +1,505 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}🚚 Assign Delivery Agent - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .assignment-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .order-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .agent-card {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        background: white;
+    }
+    
+    .agent-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .agent-card.selected {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #f8fff9 100%);
+        box-shadow: 0 4px 15px rgba(40,167,69,0.2);
+        transform: translateY(-2px);
+    }
+    
+    .agent-card.selected::after {
+        content: "✓ SELECTED";
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .agent-status {
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .status-available {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-busy {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .agent-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .agent-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .agent-stats {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        flex: 1;
+    }
+    
+    .assign-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 1rem 2rem;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(40,167,69,0.3);
+    }
+    
+    .assign-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40,167,69,0.4);
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+    
+    .assign-btn:disabled {
+        background: #6c757d;
+        box-shadow: none;
+        transform: none;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 100%;
+    }
+    
+    .btn-assign:hover {
+        background: #218838;
+    }
+    
+    .btn-assign:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    .alert {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 5px;
+    }
+    
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="assignment-container">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h2>🚚 Assign Delivery Agent</h2>
+            <p class="text-muted">Select the best available agent for fast delivery</p>
+        </div>
+        
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if order %}
+            <!-- Order Information Card -->
+            <div class="order-info">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-1">📦 {{ order.order_number }}</h4>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-clock me-1"></i> {{ order.created_at|timesince }} ago
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-rupee-sign me-1"></i> ₹{{ order.total_amount }}
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-box me-1"></i> {{ order.items.count }} item{{ order.items.count|pluralize }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="badge bg-light text-dark px-3 py-2">{{ order.get_status_display }}</span>
+                    </div>
+                </div>
+                
+                {% if order.delivery_address %}
+                <div class="mt-3 pt-3 border-top border-light">
+                    <h6 class="mb-1">📍 Delivery Address</h6>
+                    <p class="mb-0 opacity-75">
+                        {{ order.delivery_address.address_line_1 }}, {{ order.delivery_address.city }}
+                        - {{ order.delivery_address.pincode }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Agent Selection Form -->
+            <form method="post" id="assignmentForm">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <h5 class="mb-3">👥 Available Delivery Agents ({{ agents.count }})</h5>
+                    
+                    {% if agents %}
+                        <div id="agentsList">
+                            {% for agent in agents %}
+                            <div class="agent-card" onclick="selectAgent({{ agent.id }}, '{{ agent.user.get_full_name }}')">
+                                <div class="agent-info">
+                                    <div class="agent-avatar">
+                                        {{ agent.user.first_name.0|default:"A" }}{{ agent.user.last_name.0|default:"" }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ agent.user.get_full_name }}</h6>
+                                                <span class="agent-status status-{{ agent.status }}">
+                                                    {% if agent.is_available %}✅ Available{% else %}⏰ Busy{% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-star text-warning"></i> 4.8
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="agent-stats mt-2">
+                                            <div class="stat-item">
+                                                <strong>12</strong>
+                                                <small class="d-block text-muted">Today</small>
+                                            </div>
+                                            <div class="stat-item">
+                                                <strong>₹850</strong>
+                                                <small class="d-block text-muted">Earnings</small>
+                                            </div>
+                                            <div class="stat-item">
+                                                <strong>25 min</strong>
+                                                <small class="d-block text-muted">Avg Time</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <input type="hidden" name="agent_id" id="selectedAgentId" value="">
+                        
+                        <!-- Assignment Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="assign-btn" id="assignBtn" disabled>
+                                <i class="fas fa-truck me-2"></i>
+                                Assign Agent
+                            </button>
+                            <p class="mt-2 text-muted">
+                                <small>Agent will be notified immediately after assignment</small>
+                            </p>
+                        </div>
+                        
+                    {% else %}
+                        <!-- No Agents Available -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Delivery Agents Available</h5>
+                            <p class="text-muted">All agents are currently busy or offline. Please try again later.</p>
+                            <a href="{% url 'stores:order_detail' order.order_number %}" class="btn btn-outline-primary">
+                                Back to Order
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </form>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h5>Order Not Found</h5>
+                <p class="text-muted">The requested order could not be found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let selectedAgentId = null;
+let selectedAgentName = '';
+
+function selectAgent(agentId, agentName) {
+    // Remove previous selection
+    document.querySelectorAll('.agent-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selection to clicked card
+    event.currentTarget.classList.add('selected');
+    
+    // Update form data
+    selectedAgentId = agentId;
+    selectedAgentName = agentName;
+    document.getElementById('selectedAgentId').value = agentId;
+    
+    // Enable assign button
+    const assignBtn = document.getElementById('assignBtn');
+    assignBtn.disabled = false;
+    assignBtn.innerHTML = `<i class="fas fa-truck me-2"></i>Assign to ${agentName}`;
+}
+
+// Form submission with loading state
+document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+    if (!selectedAgentId) {
+        e.preventDefault();
+        alert('Please select a delivery agent first.');
+        return;
+    }
+    
+    const assignBtn = document.getElementById('assignBtn');
+    assignBtn.disabled = true;
+    assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assigning...';
+});
+</script>
+{% endblock %}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Customer:</strong><br>
+                        {{ order.user.get_full_name|default:order.user.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Phone:</strong><br>
+                        {{ order.phone }}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <strong>Delivery Address:</strong><br>
+                        {{ order.delivery_address }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if available_agents %}
+                <div class="agents-section">
+                    <h4>Available Delivery Agents</h4>
+                    <p class="text-muted mb-3">Select an agent to assign this order</p>
+                    
+                    <form method="post" id="assignmentForm">
+                        {% csrf_token %}
+                        <div class="agents-list">
+                            {% for agent in available_agents %}
+                                <div class="agent-card" data-agent-id="{{ agent.id }}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-1">
+                                            <input type="radio" 
+                                                   name="agent_id" 
+                                                   value="{{ agent.id }}" 
+                                                   id="agent_{{ agent.id }}"
+                                                   class="form-check-input">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="mb-1">{{ agent.user.get_full_name|default:agent.user.username }}</h6>
+                                            <small class="text-muted">{{ agent.user.email }}</small>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <span class="agent-status status-{% if agent.is_available %}available{% else %}offline{% endif %}">
+                                                {% if agent.is_available %}Available{% else %}Offline{% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="agent-stats">
+                                                <strong>{{ agent.phone }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="agent-stats">
+                                                <small>Active deliveries:</small><br>
+                                                <strong>{{ agent.active_assignments_count|default:0 }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="agent-stats">
+                                                <small>Rating:</small><br>
+                                                <strong>⭐ {{ agent.rating|default:"N/A" }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-assign" id="assignBtn" disabled>
+                                <span id="btnText">📋 Assign Selected Agent</span>
+                                <span id="btnSpinner" class="d-none">
+                                    <i class="fa fa-spinner fa-spin"></i> Processing...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h5>ℹ️ No Available Agents</h5>
+                    <p>There are currently no available delivery agents. You can:</p>
+                    <ul class="mb-0">
+                        <li>Wait for an agent to become available</li>
+                        <li>Contact agents directly to check availability</li>
+                        <li>Use the automatic assignment when an agent becomes available</li>
+                    </ul>
+                </div>
+            {% endif %}
+            
+            <div class="mt-4 text-center">
+                <a href="{% url 'stores:order_detail' order.order_number %}" class="btn btn-secondary">
+                    ← Back to Order
+                </a>
+            </div>
+            
+        {% else %}
+            <div class="alert alert-danger">
+                <h5>Error</h5>
+                <p>Unable to load order information. Please contact support.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle agent card selection
+    $('.agent-card').on('click', function() {
+        const agentId = $(this).data('agent-id');
+        const radioBtn = $(`#agent_${agentId}`);
+        
+        // Unselect all cards
+        $('.agent-card').removeClass('selected');
+        $('input[name="agent_id"]').prop('checked', false);
+        
+        // Select clicked card
+        $(this).addClass('selected');
+        radioBtn.prop('checked', true);
+        
+        // Enable assign button
+        $('#assignBtn').prop('disabled', false);
+    });
+    
+    // Handle form submission
+    $('#assignmentForm').on('submit', function(e) {
+        const selectedAgent = $('input[name="agent_id"]:checked');
+        
+        if (selectedAgent.length === 0) {
+            e.preventDefault();
+            alert('Please select an agent to assign this order.');
+            return;
+        }
+        
+        // Show loading state
+        $('#assignBtn').prop('disabled', true);
+        $('#btnText').addClass('d-none');
+        $('#btnSpinner').removeClass('d-none');
+        
+        // Confirm assignment
+        const agentName = selectedAgent.closest('.agent-card').find('h6').text().trim();
+        if (!confirm(`Are you sure you want to assign this order to ${agentName}?`)) {
+            e.preventDefault();
+            // Reset button state
+            $('#assignBtn').prop('disabled', false);
+            $('#btnText').removeClass('d-none');
+            $('#btnSpinner').addClass('d-none');
+            return;
+        }
+    });
+    
+    // Auto-select single agent if only one available
+    const agentCards = $('.agent-card');
+    if (agentCards.length === 1) {
+        agentCards.first().click();
+    }
+});
+</script>
+{% endblock %}

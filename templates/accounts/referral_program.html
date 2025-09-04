@@ -1,0 +1,223 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Referral Program{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2><i class="fas fa-users text-primary me-2"></i>Referral Program</h2>
+                <p class="text-muted">Invite friends and earn rewards together!</p>
+            </div>
+
+            <!-- Referral Stats Card -->
+            <div class="card mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h3 class="mb-0">{{ total_referrals }}</h3>
+                            <small>Total Referrals</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="mb-0">{{ successful_referrals }}</h3>
+                            <small>Successful</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="mb-0">{{ loyalty_account.available_points }}</h3>
+                            <small>Your Points</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-share text-white fa-lg"></i>
+                            </div>
+                            <h6 class="mt-2">1. Share Your Link</h6>
+                            <p class="text-muted small">Share your unique referral link with friends and family</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-user-plus text-white fa-lg"></i>
+                            </div>
+                            <h6 class="mt-2">2. Friend Signs Up</h6>
+                            <p class="text-muted small">Your friend creates an account using your referral link</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-gift text-white fa-lg"></i>
+                            </div>
+                            <h6 class="mt-2">3. Both Get Rewards</h6>
+                            <p class="text-muted small">You both earn 100 loyalty points when they make their first order</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referral Link -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-link me-2"></i>Your Referral Link</h5>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="referralLink" value="{{ referral_link }}" readonly>
+                        <button class="btn btn-primary" type="button" onclick="copyReferralLink()">
+                            <i class="fas fa-copy me-1"></i>Copy
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-success me-2" onclick="shareWhatsApp()">
+                            <i class="fab fa-whatsapp me-1"></i>Share on WhatsApp
+                        </button>
+                        <button class="btn btn-info me-2" onclick="shareEmail()">
+                            <i class="fas fa-envelope me-1"></i>Share via Email
+                        </button>
+                        <button class="btn btn-secondary" onclick="shareSMS()">
+                            <i class="fas fa-sms me-1"></i>Share via SMS
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referral History -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Your Referrals</h5>
+                </div>
+                <div class="card-body">
+                    {% if referrals_made %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Friend</th>
+                                    <th>Joined</th>
+                                    <th>First Order</th>
+                                    <th>Status</th>
+                                    <th>Bonus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for referral in referrals_made %}
+                                <tr>
+                                    <td>
+                                        {{ referral.referred.get_full_name|default:referral.referred.username }}
+                                    </td>
+                                    <td>{{ referral.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if referral.referred_first_order %}
+                                            {{ referral.referred_first_order.created_at|date:"M d, Y" }}
+                                        {% else %}
+                                            <span class="text-muted">No orders yet</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if referral.referrer_bonus_given %}
+                                            <span class="badge bg-success">Complete</span>
+                                        {% elif referral.referred_first_order %}
+                                            <span class="badge bg-warning">Processing</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if referral.referrer_bonus_given %}
+                                            <span class="text-success">+100 points</span>
+                                        {% else %}
+                                            <span class="text-muted">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h6>No Referrals Yet</h6>
+                        <p class="text-muted">Start sharing your referral link to earn rewards!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Referral Terms -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Terms & Conditions</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-check text-success me-2"></i>Both you and your friend will earn 100 loyalty points</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Points are awarded after your friend's first successful order</li>
+                        <li><i class="fas fa-check text-success me-2"></i>There's no limit to how many friends you can refer</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Referred friends must be new customers</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Self-referrals and fake accounts are not allowed</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Fresh Express reserves the right to modify or terminate the program</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyReferralLink() {
+    const linkInput = document.getElementById('referralLink');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // For mobile devices
+    document.execCommand('copy');
+    
+    // Show success message
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-primary');
+    }, 2000);
+}
+
+function shareWhatsApp() {
+    const message = encodeURIComponent(`Join Fresh Express and get the best items delivered fresh! Use my referral link to get 100 loyalty points on your first order: {{ referral_link }}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+}
+
+function shareEmail() {
+    const subject = encodeURIComponent('Join Fresh Express - Premium Fresh Food Delivery');
+    const body = encodeURIComponent(`Hi there!
+
+I've been using Fresh Express for all my meat and seafood needs and I love it! They deliver fresh, premium quality products right to your doorstep.
+
+Join using my referral link and we'll both get 100 loyalty points:
+{{ referral_link }}
+
+You can use these points to get discounts on future orders. Give it a try!
+
+Best regards`);
+    
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+}
+
+function shareSMS() {
+    const message = encodeURIComponent(`Join Fresh Express for premium fresh food delivery! Use my link to get 100 loyalty points: {{ referral_link }}`);
+    window.open(`sms:?body=${message}`, '_blank');
+}
+</script>
+{% endblock %}

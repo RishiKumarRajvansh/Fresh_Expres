@@ -1,0 +1,169 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Contact Us - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 text-primary mb-3">Contact Us</h1>
+            <p class="lead">We're here to help! Get in touch with us for any questions or support.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contact Information -->
+        <div class="col-md-6 mb-4">
+            <h3 class="text-primary mb-4">Get In Touch</h3>
+            
+            <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-phone-alt text-primary me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h5 class="mb-1">Phone</h5>
+                        <p class="mb-0"><a href="tel:+1-800-MEAT-FISH" class="text-decoration-none">1-800-MEAT-FISH</a></p>
+                        <small class="text-muted">Available 24/7</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-envelope text-primary me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h5 class="mb-1">Email</h5>
+                        <p class="mb-0"><a href="mailto:support@freshmeatseafood.com" class="text-decoration-none">support@freshmeatseafood.com</a></p>
+                        <small class="text-muted">Response within 2 hours</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-map-marker-alt text-primary me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h5 class="mb-1">Address</h5>
+                        <p class="mb-0">123 Fresh Market Street<br>Food District, FD 12345</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-comments text-primary me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h5 class="mb-1">Live Chat</h5>
+                        <p class="mb-0">Available on our website</p>
+                        <small class="text-muted">Instant support during business hours</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Hours -->
+            <h4 class="text-primary mt-4 mb-3">Business Hours</h4>
+            <div class="bg-light p-3 rounded">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Monday - Friday:</strong><br>
+                        6:00 AM - 11:00 PM
+                    </div>
+                    <div class="col-6">
+                        <strong>Saturday - Sunday:</strong><br>
+                        7:00 AM - 10:00 PM
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="col-md-6 mb-4">
+            <h3 class="text-appetite-red mb-4">Send Us a Message</h3>
+
+            <form method="POST" action="{% url 'core:contact' %}" id="contactForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="contactName" class="form-label">Full Name *</label>
+                    <input type="text" class="form-control" id="contactName" name="name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contactEmail" class="form-label">Email Address *</label>
+                    <input type="email" class="form-control" id="contactEmail" name="email" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contactPhone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="contactPhone" name="phone">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contactSubject" class="form-label">Subject *</label>
+                    <select class="form-select" id="contactSubject" name="subject" required>
+                        <option value="">Select a subject</option>
+                        <option value="Order Related">Order Related</option>
+                        <option value="Delivery Issue">Delivery Issue</option>
+                        <option value="Product Quality">Product Quality</option>
+                        <option value="Account Support">Account Support</option>
+                        <option value="Billing Question">Billing Question</option>
+                        <option value="General Inquiry">General Inquiry</option>
+                        <option value="Feedback">Feedback</option>
+                        <option value="Technical Support">Technical Support</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="contactMessage" class="form-label">Message *</label>
+                    <textarea class="form-control" id="contactMessage" name="message" rows="5" required 
+                              placeholder="Please provide details about your inquiry..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-primary text-center mb-4">Frequently Asked Questions</h3>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5><i class="fas fa-question-circle text-primary me-2"></i>How do I track my order?</h5>
+            <p>You can track your order in real-time through your account dashboard or by clicking the tracking link in your order confirmation email.</p>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5><i class="fas fa-question-circle text-primary me-2"></i>What if I'm not satisfied with my order?</h5>
+            <p>We offer a 100% satisfaction guarantee. Contact us within 24 hours of delivery and we'll make it right.</p>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5><i class="fas fa-question-circle text-primary me-2"></i>Do you deliver to my area?</h5>
+            <p>Enter your ZIP code on our homepage to check if we deliver to your location. We're constantly expanding our delivery areas.</p>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5><i class="fas fa-question-circle text-primary me-2"></i>How do you ensure freshness?</h5>
+            <p>We partner with local stores and use temperature-controlled delivery to ensure your meat and seafood arrive fresh.</p>
+        </div>
+    </div>
+
+    <!-- Social Media -->
+    <div class="row mt-4">
+        <div class="col-12 text-center bg-light p-4 rounded">
+            <h4 class="text-primary mb-3">Follow Us</h4>
+            <p class="mb-3">Stay connected for updates, recipes, and special offers!</p>
+            <div class="social-links">
+                <a href="#" class="btn btn-outline-primary me-2"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="btn btn-outline-primary me-2"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="btn btn-outline-primary me-2"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="btn btn-outline-primary me-2"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="btn btn-outline-primary"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

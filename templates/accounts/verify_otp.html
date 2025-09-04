@@ -1,0 +1,255 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Verify OTP - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <!-- Left side - Brand/Image -->
+        <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-success text-white">
+            <div class="text-center">
+                <h1 class="display-4 fw-bold mb-4">🔐 Secure Verification</h1>
+                <p class="lead mb-4">Your security is our priority</p>
+                <div class="mb-4">
+                    <h3>📱</h3>
+                    <p>Check your mobile for the OTP</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right side - OTP Form -->
+        <div class="col-lg-6 d-flex align-items-center justify-content-center">
+            <div class="w-100" style="max-width: 400px;">
+                <div class="card shadow border-0">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <div class="mb-3">
+                                <i class="fas fa-mobile-alt fa-3x text-success"></i>
+                            </div>
+                            <h2 class="fw-bold text-success">Verify OTP</h2>
+                            <p class="text-muted">
+                                Enter the 6-digit OTP sent to<br>
+                                <strong>+91 {{ mobile_number }}</strong>
+                            </p>
+                        </div>
+                        
+                        <form method="post" id="otpForm">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Enter OTP</label>
+                                <div class="d-flex justify-content-between otp-inputs">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="0">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="1">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="2">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="3">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="4">
+                                    <input type="text" class="form-control text-center otp-digit" maxlength="1" data-index="5">
+                                </div>
+                                <input type="hidden" name="otp" id="hiddenOtp">
+                                
+                                {% if form.otp.errors %}
+                                    <div class="text-danger mt-2">
+                                        {% for error in form.otp.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if error %}
+                                    
+                                {% endif %}
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success w-100 py-3 mb-3" id="verifyBtn">
+                                <i class="fas fa-check me-2"></i>Verify & Login
+                            </button>
+                        </form>
+                        
+                        <div class="text-center">
+                            <p class="text-muted mb-2">Didn't receive the OTP?</p>
+                            <div id="resendSection">
+                                <button class="btn btn-outline-success" id="resendBtn" onclick="resendOTP()">
+                                    <i class="fas fa-redo me-2"></i>Resend OTP
+                                </button>
+                            </div>
+                            <div id="timerSection" style="display: none;">
+                                <span class="text-muted">Resend OTP in <span id="timer">30</span>s</span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="text-center">
+                            <a href="{% url 'accounts:mobile_login' %}" class="text-success">
+                                <i class="fas fa-arrow-left me-1"></i>Change mobile number
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+    
+    .card {
+        border-radius: 15px;
+    }
+    
+    .otp-inputs {
+        gap: 8px;
+    }
+    
+    .otp-digit {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    
+    .otp-digit:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+    
+    .otp-digit.filled {
+        border-color: #198754;
+        background-color: #f8f9fa;
+    }
+    
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const otpDigits = document.querySelectorAll('.otp-digit');
+    const hiddenOtp = document.getElementById('hiddenOtp');
+    
+    otpDigits.forEach((input, index) => {
+        input.addEventListener('input', function(e) {
+            if (e.target.value.length === 1) {
+                e.target.classList.add('filled');
+                // Move to next input
+                if (index < otpDigits.length - 1) {
+                    otpDigits[index + 1].focus();
+                }
+            } else {
+                e.target.classList.remove('filled');
+            }
+            
+            // Update hidden input
+            updateHiddenOtp();
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && e.target.value === '') {
+                // Move to previous input on backspace
+                if (index > 0) {
+                    otpDigits[index - 1].focus();
+                    otpDigits[index - 1].classList.remove('filled');
+                }
+            }
+        });
+        
+        // Only allow numbers
+        input.addEventListener('keypress', function(e) {
+            if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    function updateHiddenOtp() {
+        let otp = '';
+        otpDigits.forEach(input => {
+            otp += input.value;
+        });
+        hiddenOtp.value = otp;
+    }
+    
+    // Focus first input
+    otpDigits[0].focus();
+});
+
+function resendOTP() {
+    const resendBtn = document.getElementById('resendBtn');
+    const resendSection = document.getElementById('resendSection');
+    const timerSection = document.getElementById('timerSection');
+    const timerSpan = document.getElementById('timer');
+    
+    // Show loading
+    resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+    resendBtn.disabled = true;
+    
+    // Make AJAX request to resend OTP
+    fetch('{% url "accounts:resend_otp" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'mobile_number': '{{ mobile_number }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Start timer
+            resendSection.style.display = 'none';
+            timerSection.style.display = 'block';
+            
+            let timeLeft = 30;
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerSpan.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    resendSection.style.display = 'block';
+                    timerSection.style.display = 'none';
+                    resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend OTP';
+                    resendBtn.disabled = false;
+                }
+            }, 1000);
+            
+            // Clear OTP inputs
+            document.querySelectorAll('.otp-digit').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            document.querySelector('.otp-digit').focus();
+            
+                        const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success mt-3';
+            alertDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>OTP sent successfully!';
+            document.querySelector('form').appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        } else {
+            // Show error
+            resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend OTP';
+            resendBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend OTP';
+        resendBtn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Enter Your ZIP Code - Fresh Express Delivery{% endblock %}
+
+{% block content %}
+<section class="py-4" style="min-height: 80vh; background: linear-gradient(135deg, var(--primary-color) 0%, var(--success-color) 100%);">
+    <div class="container">
+        <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+            <div class="col-lg-5 col-md-7 col-sm-9">
+                <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="text-center mb-4">
+                            <div class="mb-3">
+                                <i class="fas fa-map-marker-alt fa-3x" style="color: var(--primary-color);"></i>
+                            </div>
+                            <h2 class="h4 fw-bold mb-2">Where do you want delivery?</h2>
+                            <p class="text-muted small">Enter your ZIP code to see available stores and products</p>
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="id_zip_code" class="form-label fw-semibold">ZIP Code</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-location-dot"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="zip_code" 
+                                           class="form-control" 
+                                           id="id_zip_code"
+                                           placeholder="Enter your ZIP code" 
+                                           maxlength="10" 
+                                           required>
+                                </div>
+                                {% if form.zip_code.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.zip_code.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg" 
+                                        style="border-radius: 10px ;">
+                                    <i class="fas fa-search me-2"></i>Find Stores
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Location detection -->
+                        <div class="text-center">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="detect-location">
+                                <i class="fas fa-location-arrow me-2"></i>Use Current Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+                    
+                    <!-- Information -->
+                    <div class="mt-4 pt-4 border-top">
+                        <h6>Why do we need your ZIP code?</h6>
+                        <ul class="text-start small text-muted">
+                            <li>Show stores that deliver to your area</li>
+                            <li>Display accurate delivery times</li>
+                            <li>Calculate delivery charges</li>
+                            <li>Ensure product availability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12 mb-4">
+                <h3 class="fw-bold">Available in Major Cities</h3>
+                <p class="text-muted">We're expanding rapidly to serve you better</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Delhi</h6>
+                    <small class="text-muted">25+ stores</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Mumbai</h6>
+                    <small class="text-muted">30+ stores</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Bangalore</h6>
+                    <small class="text-muted">20+ stores</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Chennai</h6>
+                    <small class="text-muted">15+ stores</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Hyderabad</h6>
+                    <small class="text-muted">18+ stores</small>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 text-center mb-4">
+                <div class="city-item">
+                    <i class="fas fa-city fa-2x text-primary mb-2"></i>
+                    <h6>Pune</h6>
+                    <small class="text-muted">12+ stores</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted">Don't see your city? <a href="{% url 'core:waitlist' %}">Join our waitlist</a> to get notified when we launch in your area.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ZIP code shortcuts
+    document.querySelectorAll('.zip-shortcut').forEach(button => {
+        button.addEventListener('click', function() {
+            const zip = this.dataset.zip;
+            document.getElementById('id_zip_code').value = zip;
+            document.querySelector('form').submit();
+        });
+    });
+    
+    // Location detection
+    document.getElementById('detect-location').addEventListener('click', function() {
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<span class="loading"></span> Detecting...';
+        button.disabled = true;
+        
+        getCurrentLocation()
+            .then(location => {
+                // In a real app, you would reverse geocode to get ZIP code
+                // For now, we'll just show a message
+                showNotification('Location detected! Please enter your ZIP code manually.', 'info');
+            })
+            .catch(error => {
+                showNotification('Unable to detect location. Please enter your ZIP code manually.', 'warning');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+    });
+    
+    // Auto-format ZIP code input
+    const zipInput = document.getElementById('id_zip_code');
+    if (zipInput) {
+        zipInput.addEventListener('input', function() {
+            // Only allow digits and limit to 6 characters
+            this.value = this.value.replace(/\D/g, '').substring(0, 6);
+        });
+        
+        zipInput.addEventListener('keypress', function(e) {
+            // Allow only digits
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+function getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject('Geolocation is not supported');
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                });
+            },
+            error => {
+                let errorMessage = 'Unknown error';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location access denied';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out';
+                        break;
+                }
+                reject(errorMessage);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000
+            }
+        );
+    });
+}
+</script>
+{% endblock %}

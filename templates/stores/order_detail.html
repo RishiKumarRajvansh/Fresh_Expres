@@ -1,0 +1,431 @@
+{% extends 'stores/base.html' %}
+
+{% block title %}Order #{{ order.order_number }} - Store Management{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block store_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{% url 'stores:orders' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                </a>
+            </div>
+
+            <!-- Order Header -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 class="mb-1">Order #{{ order.order_number }}</h4>
+                            <small>Placed on {{ order.created_at|date:"F d, Y at g:i A" }}</small>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'confirmed' %}info{% elif order.status == 'preparing' %}warning{% else %}light{% endif %} fs-6">
+                                {{ order.get_status_display }}
+                            </span>
+                            <div class="mt-2">
+                                <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'failed' %}danger{% else %}warning{% endif %}">
+                                    Payment: {{ order.get_payment_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user me-2"></i>Customer Information</h6>
+                            <p class="mb-1"><strong>{{ order.user.first_name }} {{ order.user.last_name }}</strong></p>
+                            <p class="text-muted small">{{ order.user.phone_number }}</p>
+                            <p class="text-muted small">{{ order.user.email|default:"No email provided" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Delivery Information</h6>
+                            <p class="mb-1"><strong>{{ order.delivery_address.full_name }}</strong></p>
+                            <p class="text-muted small">
+                                {{ order.delivery_address.address_line_1 }}<br>
+                                {% if order.delivery_address.address_line_2 %}{{ order.delivery_address.address_line_2 }}<br>{% endif %}
+                                {{ order.delivery_address.city }}, {{ order.delivery_address.state }} - {{ order.delivery_address.pincode }}
+                            </p>
+                            {% if order.delivery_address.phone %}
+                            <p class="text-muted small"><i class="fas fa-phone me-1"></i>{{ order.delivery_address.phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Order Items ({{ order.items.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in order.items.all %}
+                    <div class="row mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                        <div class="col-2">
+                            {% if item.store_product.product.image %}
+                                <img src="{{ item.store_product.product.image.url }}" 
+                                     alt="{{ item.store_product.product.name }}" 
+                                     class="img-fluid rounded" 
+                                     style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mb-1">{{ item.store_product.product.name }}</h6>
+                            <p class="text-muted small mb-1">{{ item.store_product.product.category.name }}</p>
+                            {% if item.store_product.product.weight %}
+                            <p class="text-muted small">Weight: {{ item.store_product.product.weight }}{{ item.store_product.product.weight_unit }}</p>
+                            {% endif %}
+                            <p class="text-success small">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Stock: {{ item.store_product.stock_quantity }} available
+                            </p>
+                        </div>
+                        <div class="col-2 text-center">
+                            <p class="mb-1"><strong>Qty: {{ item.quantity }}</strong></p>
+                            <p class="text-muted small">₹{{ item.price }} each</p>
+                        </div>
+                        <div class="col-2 text-end">
+                            <h6 class="mb-0">₹{{ item.total_price }}</h6>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No items found in this order.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-8">Subtotal:</div>
+                        <div class="col-4 text-end">₹{{ order.subtotal }}</div>
+                    </div>
+                    {% if order.delivery_fee > 0 %}
+                    <div class="row mb-2">
+                        <div class="col-8">Delivery Fee:</div>
+                        <div class="col-4 text-end">₹{{ order.delivery_fee }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.tax_amount > 0 %}
+                    <div class="row mb-2">
+                        <div class="col-8">Tax:</div>
+                        <div class="col-4 text-end">₹{{ order.tax_amount }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.discount_amount > 0 %}
+                    <div class="row mb-2 text-success">
+                        <div class="col-8">Discount:</div>
+                        <div class="col-4 text-end">-₹{{ order.discount_amount }}</div>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-8"><strong>Total Amount:</strong></div>
+                        <div class="col-4 text-end"><strong>₹{{ order.total_amount }}</strong></div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-8">Payment Method:</div>
+                        <div class="col-4 text-end">{{ order.get_payment_method_display }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Management -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Order Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Update Order Status</h6>
+                            <form method="post" action="{% url 'stores:update_order_status' order.order_number %}" id="updateStatusForm">
+                                {% csrf_token %}
+                                <input type="hidden" name="order_number" value="{{ order.order_number }}">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">New Status:</label>
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="placed" {% if order.status == 'placed' %}selected{% endif %}>Placed</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                                        <option value="packed" {% if order.status == 'packed' %}selected{% endif %}>Packed</option>
+                                        <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes (Optional):</label>
+                                    <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Add any notes about this status update..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Update Status
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Quick Actions</h6>
+                            <div class="d-grid gap-2">
+                                {% if order.status == 'placed' %}
+                                <button class="btn btn-success btn-sm" onclick="updateOrderStatus('confirmed')">
+                                    <i class="fas fa-check me-2"></i>Confirm Order
+                                </button>
+                                {% endif %}
+                                
+                                {% if order.status == 'confirmed' %}
+                                <button class="btn btn-info btn-sm" onclick="updateOrderStatus('preparing')">
+                                    <i class="fas fa-utensils me-2"></i>Start Preparing
+                                </button>
+                                {% endif %}
+                                
+                                {% if order.status == 'preparing' %}
+                                <button class="btn btn-warning btn-sm" onclick="updateOrderStatus('packed')">
+                                    <i class="fas fa-box me-2"></i>Mark as Packed
+                                </button>
+                                {% endif %}
+                                
+                                {% if order.status == 'packed' %}
+                                <button class="btn btn-primary btn-sm" onclick="updateOrderStatus('out_for_delivery')">
+                                    <i class="fas fa-truck me-2"></i>Send for Delivery
+                                </button>
+                                {% endif %}
+                                
+                                {% if order.status not in 'delivered,cancelled' %}
+                                <button class="btn btn-outline-danger btn-sm" onclick="if(confirm('Are you sure you want to cancel this order?')) updateOrderStatus('cancelled')">
+                                    <i class="fas fa-times me-2"></i>Cancel Order
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Information -->
+            {% if order.delivery_slot %}
+            
+            {% endif %}
+
+            {% if order.estimated_delivery_time %}
+            
+            {% endif %}
+
+            <!-- Workflow Codes and Handover Information -->
+            {% if order.delivery_confirmation_code or order.handover_code %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-key me-2"></i>Delivery Workflow Codes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if order.delivery_confirmation_code %}
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="fas fa-key me-2"></i>Delivery Confirmation Code</h6>
+                            
+                                <small class="text-muted d-block mt-2">
+                                    Customer will use this code to confirm delivery receipt
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if order.handover_code and order.status == 'packed' %}
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="fas fa-key me-2"></i>Handover Code</h6>
+                            
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-warning me-2" onclick="copyToClipboard('{{ order.handover_code }}')">
+                                            <i class="fas fa-copy"></i> Copy Code
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="printHandoverCode('{{ order.handover_code }}', '{{ order.order_number }}')">
+                                            <i class="fas fa-print"></i> Print Code
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block text-center mt-2">
+                                    Give this 6-digit code to delivery agent for package handover verification
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if order.status == 'packed' %}
+                    
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show temporary success message
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+        
+        Toast.fire({
+            icon: 'success',
+            title: 'Code copied to clipboard!'
+        });
+    }).catch(function(err) {
+    });
+}
+
+
+
+function updateOrderStatus(status) {
+    const form = document.getElementById('updateStatusForm');
+    if (!form) return;
+    const statusSelect = document.getElementById('status');
+    if (statusSelect) statusSelect.value = status;
+    
+    // Submit form via AJAX
+    const formData = new FormData(form);
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = (csrfEl && csrfEl.value) || getCookie('csrftoken') || '{{ csrf_token }}';
+    // Log request details for monitoring
+    try { console.log('updateOrderStatus ->', { action: form.action, order_id: formData.get('order_id'), status: formData.get('status'), csrfToken: csrfToken ? '[present]' : '[missing]' }); } catch(e){}
+
+    fetch(form.action, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatusMessage('Order status updated successfully!', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showStatusMessage(data.error || 'Failed to update status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showStatusMessage('Network error occurred', 'error');
+    });
+}
+
+// Handle form submission
+document.getElementById('updateStatusForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    // CSRF helper for submit handler
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfEl2 = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken2 = (csrfEl2 && csrfEl2.value) || getCookie('csrftoken') || '{{ csrf_token }}';
+
+    try { console.debug('submit updateStatusForm ->', { action: this.action, order_id: formData.get('order_id'), status: formData.get('status'), csrf: csrfToken2 ? '[present]' : '[missing]' }); } catch(e){}
+
+    fetch(this.action, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken2
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+
+// Production ready - debug panel removed
+
+// Status message function
+function showStatusMessage(message, type = 'info') {
+    const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+</script>
+{% endblock %}

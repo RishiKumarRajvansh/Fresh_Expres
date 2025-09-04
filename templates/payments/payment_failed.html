@@ -1,0 +1,249 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Payment Failed - Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+.failure-animation {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 2rem;
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: shake 0.5s ease-in-out 0s 2;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+.failure-icon {
+    font-size: 3rem;
+    color: white;
+}
+
+.error-details {
+    background: #f8f9fa;
+    border-left: 4px solid #dc3545;
+    border-radius: 0 10px 10px 0;
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.common-issues {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.issue-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.8rem;
+}
+
+.issue-item:last-child {
+    margin-bottom: 0;
+}
+
+.issue-icon {
+    color: #856404;
+    margin-right: 0.5rem;
+    margin-top: 0.2rem;
+}
+
+.retry-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="text-center">
+                <!-- Failure Animation -->
+                <div class="failure-animation">
+                    <i class="fas fa-times failure-icon"></i>
+                </div>
+                
+                <!-- Error Message -->
+                <h2 class="text-danger mb-3">Payment Failed</h2>
+                <p class="text-muted mb-4">We couldn't process your payment. Don't worry, you haven't been charged.</p>
+                
+                <!-- Error Details -->
+                {% if error %}
+                <div class="error-details">
+                    <h6 class="text-danger mb-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error Details
+                    </h6>
+                    <p class="mb-0">{{ error }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Transaction Info -->
+                {% if transaction %}
+                <div class="bg-light rounded p-3 mb-4">
+                    <small class="text-muted">
+                        <strong>Order ID:</strong> #{{ transaction.order.id }}<br>
+                        <strong>Amount:</strong> ₹{{ transaction.amount }}<br>
+                        <strong>Attempted:</strong> {{ transaction.initiated_at|date:"M d, Y g:i A" }}
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- Common Issues -->
+                <div class="common-issues">
+                    <h6 class="text-warning mb-3">
+                        <i class="fas fa-lightbulb me-2"></i>Common Issues & Solutions
+                    </h6>
+                    
+                    <div class="issue-item">
+                        <i class="fas fa-wifi issue-icon"></i>
+                        <div>
+                            <strong>Internet Connection:</strong><br>
+                            <small>Check your internet connection and try again</small>
+                        </div>
+                    </div>
+                    
+                    <div class="issue-item">
+                        <i class="fas fa-credit-card issue-icon"></i>
+                        <div>
+                            <strong>Insufficient Balance:</strong><br>
+                            <small>Ensure you have sufficient balance in your account</small>
+                        </div>
+                    </div>
+                    
+                    <div class="issue-item">
+                        <i class="fas fa-shield-alt issue-icon"></i>
+                        <div>
+                            <strong>Bank Security:</strong><br>
+                            <small>Check if your bank has blocked the transaction</small>
+                        </div>
+                    </div>
+                    
+                    <div class="issue-item">
+                        <i class="fas fa-clock issue-icon"></i>
+                        <div>
+                            <strong>Session Timeout:</strong><br>
+                            <small>Payment session may have expired</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Retry Section -->
+                <div class="retry-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-redo-alt me-2"></i>Try Again
+                    </h5>
+                    <p class="mb-3">Your order is still active. You can retry the payment or choose a different method.</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    {% if transaction %}
+                    <a href="{% url 'orders:checkout' %}?order_id={{ transaction.order.id }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-credit-card me-2"></i>Retry Payment
+                    </a>
+                    {% else %}
+                    <a href="{% url 'core:cart' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-shopping-cart me-2"></i>Go to Cart
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Continue Shopping
+                    </a>
+                    
+                    <a href="{% url 'core:contact' %}" class="btn btn-outline-info">
+                        <i class="fas fa-headset me-2"></i>Contact Support
+                    </a>
+                </div>
+                
+                <!-- Help Section -->
+                <div class="mt-4 p-3 bg-info bg-opacity-10 rounded">
+                    <small class="text-info">
+                        <i class="fas fa-question-circle me-1"></i>
+                        <strong>Need Help?</strong><br>
+                        Contact our support team at <a href="tel:+918130505221" class="text-info">+91 8130505221</a>
+                        or email us at <a href="mailto:support@freshexpress.com" class="text-info">support@freshexpress.com</a>
+                    </small>
+                </div>
+                
+                <!-- Alternative Payment Methods -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="mb-3">Alternative Payment Options</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="btn btn-outline-success btn-sm w-100" onclick="switchToUPI()">
+                                <i class="fab fa-google-pay"></i> UPI
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-outline-warning btn-sm w-100" onclick="switchToCOD()">
+                                <i class="fas fa-money-bill"></i> COD
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchToUPI() {
+    // Redirect to checkout with UPI selected
+    {% if transaction %}
+    window.location.href = "{% url 'orders:checkout' %}?order_id={{ transaction.order.id }}&method=upi";
+    {% else %}
+    window.location.href = "{% url 'core:cart' %}";
+    {% endif %}
+}
+
+function switchToCOD() {
+    // Redirect to checkout with COD selected
+    {% if transaction %}
+    window.location.href = "{% url 'orders:checkout' %}?order_id={{ transaction.order.id }}&method=cod";
+    {% else %}
+    window.location.href = "{% url 'core:cart' %}";
+    {% endif %}
+}
+
+// Auto-retry notification
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        const retryNotification = document.createElement('div');
+        retryNotification.className = 'alert alert-info fade show mt-3';
+        retryNotification.innerHTML = `
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Quick Tip:</strong> Many payment issues resolve automatically. 
+            <a href="#" onclick="location.reload()" class="alert-link">Refresh this page</a> 
+            to check if your payment went through.
+        `;
+        document.querySelector('.container-fluid .col-12').appendChild(retryNotification);
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            retryNotification.classList.remove('show');
+        }, 10000);
+    }, 3000);
+});
+</script>
+{% endblock %}

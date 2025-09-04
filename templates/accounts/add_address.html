@@ -1,0 +1,242 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Add Address - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Add New Address
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Label *</label>
+                            {{ form.label }}
+                            {% if form.label.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.label.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Contact Person</label>
+                                {{ form.contact_person }}
+                                {% if form.contact_person.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.contact_person.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Contact Phone</label>
+                                {{ form.contact_phone }}
+                                {% if form.contact_phone.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.contact_phone.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Indian mobile number (10 digits)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Type *</label>
+                            {{ form.address_type }}
+                            {% if form.address_type.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_type.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 1 *</label>
+                            {{ form.address_line_1 }}
+                            {% if form.address_line_1.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_line_1.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">House/Flat number, Building name, Street name</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 2</label>
+                            {{ form.address_line_2 }}
+                            {% if form.address_line_2.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_line_2.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Area, Landmark, Sector (Optional)</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">City *</label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.city.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">State *</label>
+                                {{ form.state }}
+                                {% if form.state.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.state.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ZIP Code *</label>
+                                {{ form.zip_code }}
+                                {% if form.zip_code.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.zip_code.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Delhi area PIN code (6 digits)</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Landmark</label>
+                                {{ form.landmark }}
+                                {% if form.landmark.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.landmark.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Nearby landmark (optional)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_default }}
+                                <label class="form-check-label" for="{{ form.is_default.id_for_label }}">
+                                    Set as default delivery address
+                                </label>
+                            </div>
+                            {% if form.is_default.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.is_default.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'accounts:address_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Addresses
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Save Address
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+</style>
+
+<script>
+// Auto-populate city and state based on ZIP code (Delhi area codes)
+document.addEventListener('DOMContentLoaded', function() {
+    const zipCodeField = document.querySelector('input[name="zip_code"]');
+    const cityField = document.querySelector('input[name="city"]');
+    const stateField = document.querySelector('input[name="state"]');
+    
+    if (zipCodeField && cityField && stateField) {
+        zipCodeField.addEventListener('input', function() {
+            const zipCode = this.value;
+            
+            // Delhi area ZIP codes start with 110
+            if (zipCode.startsWith('110') && zipCode.length >= 3) {
+                cityField.value = 'New Delhi';
+                stateField.value = 'Delhi';
+            }
+        });
+    }
+    
+    // Phone number validation
+    const phoneField = document.querySelector('input[name="phone"]');
+    if (phoneField) {
+        phoneField.addEventListener('input', function() {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

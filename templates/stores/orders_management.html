@@ -1,0 +1,185 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Orders - {{ store.name }}{% endblock %}
+
+{% block store_content %}
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0">
+            <i class="fas fa-list-alt me-2"></i>Order Management
+        </h2>
+        <a href="{% url 'stores:dashboard' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Dashboard
+        </a>
+        <a href="{% url 'stores:orders' %}" class="btn btn-primary">
+            <i class="fas fa-arrows-rotate me-1"></i>New Order System
+        </a>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'stores:orders' %}" 
+                           class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            All Orders
+                        </a>
+                        <a href="{% url 'stores:orders' %}?status=pending" 
+                           class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                            Pending
+                        </a>
+                        <a href="{% url 'stores:orders' %}?status=confirmed" 
+                           class="btn {% if status_filter == 'confirmed' %}btn-info{% else %}btn-outline-info{% endif %}">
+                            Confirmed
+                        </a>
+                        <a href="{% url 'stores:orders' %}?status=delivered" 
+                           class="btn {% if status_filter == 'delivered' %}btn-success{% else %}btn-outline-success{% endif %}">
+                            Delivered
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Order #{{ order.id }}</h6>
+                        <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% elif order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <i class="fas fa-user me-2"></i>
+                            {{ order.user.get_full_name|default:order.user.username }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-calendar me-2"></i>
+                            {{ order.created_at|date:"M d, Y g:i A" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-rupee-sign me-2"></i>
+                            ₹{{ order.total_amount }}
+                        </p>
+                        <p class="mb-3">
+                            <i class="fas fa-boxes me-2"></i>
+                            {{ order.items.count }} item{{ order.items.count|pluralize }}
+                        </p>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'stores:order_detail' order.order_number %}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                            
+                            {% if order.status == 'pending' %}
+                                <button class="btn btn-sm btn-success" 
+                                        onclick="updateStatus('{{ order.order_number }}', 'confirmed')">
+                                    <i class="fas fa-check me-1"></i>Confirm
+                                </button>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="updateStatus('{{ order.order_number }}', 'cancelled')">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                            {% elif order.status == 'confirmed' %}
+                                <button class="btn btn-sm btn-info" 
+                                        onclick="updateStatus({{ order.id }}, 'preparing')">
+                                    <i class="fas fa-clock me-1"></i>Preparing
+                                </button>
+                            {% elif order.status == 'preparing' %}
+                                <button class="btn btn-sm btn-warning" 
+                                        onclick="updateStatus({{ order.id }}, 'ready_for_pickup')">
+                                    <i class="fas fa-check-circle me-1"></i>Ready
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Orders Found</h5>
+                <p class="text-muted">
+                    {% if status_filter %}
+                        No {{ status_filter }} orders at the moment.
+                    {% else %}
+                        No orders have been placed yet.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function updateStatus(orderNumber, status) {
+    if (confirm(`Update order status to ${status}?`)) {
+        fetch(`{% url "stores:update_order_status" "PLACEHOLDER" %}`.replace('PLACEHOLDER', orderNumber), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `order_id=${orderId}&status=${status}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => location.reload(), 1000);
+            } else {
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+function showToast(type, message = '') {
+    const toast = document.createElement('div');
+    toast.className = `toast show position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+
+    const headerBg = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger';
+
+    toast.innerHTML = `
+        <div class="toast-header ${headerBg} text-white">
+            <strong class="me-auto">${type === 'success' ? 'Success' : type === 'warning' ? 'Notice' : 'Error'}</strong>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+    }, 3000);
+}
+
+
+// Add CSRF token
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = 'csrfmiddlewaretoken';
+        token.value = '{{ csrf_token }}';
+        document.body.appendChild(token);
+    }
+});
+</script>
+{% endblock %}

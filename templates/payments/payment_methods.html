@@ -1,0 +1,272 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Payment Methods - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-credit-card me-2"></i>Payment Methods</h2>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                    <i class="fas fa-plus me-2"></i>Add Payment Method
+                </button>
+            </div>
+
+            {% if payment_methods %}
+                <div class="row">
+                    {% for method in payment_methods %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card {% if method.is_default %}border-success{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        {% if method.payment_type == 'upi' %}
+                                            <h6><i class="fab fa-google-pay me-2 text-primary"></i>UPI Payment</h6>
+                                            <p class="text-muted mb-0">{{ method.upi_id }}</p>
+                                        {% elif method.payment_type == 'card' %}
+                                            <h6><i class="fas fa-credit-card me-2 text-warning"></i>{{ method.card_type|title }} Card</h6>
+                                            <p class="text-muted mb-0">{{ method.card_holder_name }}</p>
+                                            <p class="text-muted mb-0">****{{ method.card_number }}</p>
+                                        {% elif method.payment_type == 'cod' %}
+                                            <h6><i class="fas fa-money-bill-wave me-2 text-success"></i>Cash on Delivery</h6>
+                                            <p class="text-muted mb-0">Pay when you receive your order</p>
+                                        {% endif %}
+                                        
+                                        {% if method.is_default %}
+                                            <span class="badge bg-success mt-2">Default</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% if not method.is_default %}
+                                                <li><a class="dropdown-item" href="{% url 'payments:set_default_payment_method' method.id %}">
+                                                    <i class="fas fa-star me-2"></i>Set as Default
+                                                </a></li>
+                                            {% endif %}
+                                            <li><a class="dropdown-item text-danger" href="{% url 'payments:delete_payment_method' method.id %}" 
+                                                   onclick="return confirm('Are you sure you want to remove this payment method?')">
+                                                <i class="fas fa-trash me-2"></i>Remove
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-credit-card fa-4x text-muted mb-3"></i>
+                    <h4>No Payment Methods Added</h4>
+                    <p class="text-muted">Add your preferred payment methods to make checkout faster</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Method Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Payment Method</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Payment Type Selection -->
+                <div class="mb-3">
+                    <h6>Select Payment Type</h6>
+                    <div class="row">
+                        <div class="col-4">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-type-btn" data-type="upi">
+                                <i class="fab fa-google-pay d-block mb-2"></i>UPI
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="btn btn-outline-warning w-100 payment-type-btn" data-type="card">
+                                <i class="fas fa-credit-card d-block mb-2"></i>Card
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="btn btn-outline-success w-100 payment-type-btn" data-type="cod">
+                                <i class="fas fa-money-bill-wave d-block mb-2"></i>COD
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UPI Form -->
+                <div id="upi-form" class="payment-form" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">UPI ID</label>
+                        <input type="email" class="form-control" id="upi_id" placeholder="yourname@paytm">
+                        <small class="form-text text-muted">Enter your UPI ID (e.g., 9876543210@paytm)</small>
+                    </div>
+                </div>
+
+                <!-- Card Form -->
+                <div id="card-form" class="payment-form" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Card Holder Name</label>
+                        <input type="text" class="form-control" id="card_holder_name" placeholder="John Doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" class="form-control" id="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label">Expiry Month</label>
+                            <select class="form-control" id="expiry_month">
+                                <option value="">Month</option>
+                                {% for i in "123456789012"|make_list %}
+                                    <option value="{% if forloop.counter < 10 %}0{% endif %}{{ forloop.counter }}">
+                                        {% if forloop.counter < 10 %}0{% endif %}{{ forloop.counter }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Expiry Year</label>
+                            <select class="form-control" id="expiry_year">
+                                <option value="">Year</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                                <option value="2031">2031</option>
+                                <option value="2032">2032</option>
+                                <option value="2033">2033</option>
+                                <option value="2034">2034</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COD Form -->
+                <div id="cod-form" class="payment-form" style="display: none;">
+                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="save-payment-method">Save Payment Method</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedPaymentType = '';
+
+    // Payment type selection
+    document.querySelectorAll('.payment-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('.payment-type-btn').forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Hide all forms
+            document.querySelectorAll('.payment-form').forEach(form => form.style.display = 'none');
+            
+            // Show selected form
+            selectedPaymentType = this.dataset.type;
+            document.getElementById(selectedPaymentType + '-form').style.display = 'block';
+        });
+    });
+
+    // Card number formatting
+    document.getElementById('card_number')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        let matches = value.match(/\d{4,16}/g);
+        let match = matches && matches[0] || '';
+        let parts = [];
+        for (let i = 0, len = match.length; i < len; i += 4) {
+            parts.push(match.substring(i, i + 4));
+        }
+        if (parts.length) {
+            e.target.value = parts.join(' ');
+        } else {
+            e.target.value = value;
+        }
+    });
+
+    // Save payment method
+    document.getElementById('save-payment-method').addEventListener('click', async function() {
+        if (!selectedPaymentType) {
+            return;
+        }
+
+        let data = { payment_type: selectedPaymentType };
+
+        if (selectedPaymentType === 'upi') {
+            data.upi_id = document.getElementById('upi_id').value;
+            if (!data.upi_id) {
+                return;
+            }
+        } else if (selectedPaymentType === 'card') {
+            data.card_holder_name = document.getElementById('card_holder_name').value;
+            data.card_number = document.getElementById('card_number').value.replace(/\s/g, '');
+            data.expiry_month = document.getElementById('expiry_month').value;
+            data.expiry_year = document.getElementById('expiry_year').value;
+            
+            if (!data.card_holder_name || !data.card_number || !data.expiry_month || !data.expiry_year) {
+                return;
+            }
+        }
+
+        try {
+            const response = await fetch('{% url "payments:add_payment_method" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+            }
+        } catch (error) {
+        }
+    });
+});
+</script>
+
+<!-- Add CSRF token -->
+{% csrf_token %}
+
+<style>
+.payment-type-btn.active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.payment-type-btn.active.btn-outline-warning {
+    background-color: var(--bs-warning);
+    border-color: var(--bs-warning);
+}
+
+.payment-type-btn.active.btn-outline-success {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,789 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }} - Store Management{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .order-detail-card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); }
+    .status-badge { font-size: 0.875rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 20px; }
+    .status-placed { background: #fef3c7; color: #92400e; }
+    .status-confirmed { background: #dbeafe; color: #1e40af; }
+    .status-preparing { background: #fde68a; color: #b45309; }
+    .status-packed { background: #d1fae5; color: #065f46; }
+    .status-ready_for_pickup { background: #e0e7ff; color: #4338ca; }
+    .status-handed_to_delivery { background: #fed7aa; color: #c2410c; }
+    .status-out_for_delivery { background: #fecaca; color: #b91c1c; }
+    .status-delivered { background: #dcfce7; color: #166534; }
+    .status-cancelled { background: #f3f4f6; color: #6b7280; }
+    .status-refunded { background: #fef2f2; color: #dc2626; }
+    .priority-high { border-left: 4px solid #ef4444; }
+    .priority-medium { border-left: 4px solid #f59e0b; }
+    .priority-normal { border-left: 4px solid #10b981; }
+    .action-btn { border-radius: 8px; font-weight: 500; transition: all 0.2s; }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+    .timeline-item { position: relative; padding-left: 2rem; padding-bottom: 1rem; }
+    .timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 0.6rem; top: 2rem; width: 2px; height: calc(100% - 1rem); background: #e5e7eb; }
+    .timeline-dot { position: absolute; left: 0.25rem; top: 0.5rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; }
+    .timeline-dot.active { background: #10b981; }
+    .timeline-dot.inactive { background: #d1d5db; }
+</style>
+{% endblock %}
+
+{% block store_content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Order #{{ order.order_number }}</h2>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Placed on {{ order.created_at|date:"F d, Y \a\t g:i A" }}
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.get_status_display }}
+                    </span>
+                    <a href="{% url 'stores:orders_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Order Details Column -->
+        <div class="col-lg-8">
+            <!-- Order Information Card -->
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Customer</label>
+                                <p class="mb-0 fw-semibold">{{ order.user.get_full_name|default:order.user.username }}</p>
+                                <small class="text-muted">{{ order.user.email }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Order Value</label>
+                                <p class="mb-0 fw-semibold">₹{{ order.total_amount }}</p>
+                                <small class="text-muted">{{ order.payment_method|upper }} - {{ order.get_payment_status_display }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Delivery Address</label>
+                                <p class="mb-0">{{ order.delivery_address.address_line_1 }}</p>
+                                {% if order.delivery_address.address_line_2 %}
+                                    <p class="mb-0">{{ order.delivery_address.address_line_2 }}</p>
+                                {% endif %}
+                                <small class="text-muted">{{ order.delivery_address.city }}, {{ order.delivery_address.state }} {{ order.delivery_address.zip_code }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Order Metrics</label>
+                                <p class="mb-0">{{ order_metrics.total_items }} items</p>
+                                <small class="text-muted">Est. prep time: {{ order_metrics.preparation_time }} min | Age: {{ order_metrics.order_age|floatformat:1 }}h</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items Card -->
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.store_product.product.image %}
+                                                <img src="{{ item.store_product.product.image.url }}" 
+                                                     alt="{{ item.product_name }}" 
+                                                     class="rounded me-3" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-image text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-1">{{ item.product_name }}</h6>
+                                                <small class="text-muted">{{ item.store_product.product.category }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code class="text-muted">{{ item.product_sku|default:"N/A" }}</code>
+                                    </td>
+                                    <td>₹{{ item.unit_price }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ item.quantity }}</span>
+                                    </td>
+                                    <td class="fw-semibold">₹{{ item.total_price }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="fas fa-box-open fa-2x mb-2 d-block"></i>
+                                        No items found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Breakdown Card -->
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Pricing Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span>₹{{ order.subtotal }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Delivery Fee:</span>
+                                <span>₹{{ order.delivery_fee }}</span>
+                            </div>
+                            {% if order.tax_amount > 0 %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tax:</span>
+                                <span>₹{{ order.tax_amount }}</span>
+                            </div>
+                            {% endif %}
+                            {% if order.discount_amount > 0 %}
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Discount:</span>
+                                <span>-₹{{ order.discount_amount }}</span>
+                            </div>
+                            {% endif %}
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total:</span>
+                                <span>₹{{ order.total_amount }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions and Status Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions Card -->
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if next_statuses and order.status != 'out_for_delivery' and order.status != 'delivered' %}
+                        <div class="mb-3">
+                            <label class="form-label">Update Status</label>
+                            <select class="form-select" id="statusSelect">
+                                <option value="">Select new status...</option>
+                                {% for status, display in next_statuses %}
+                                    <option value="{{ status }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 mb-2" id="updateStatusBtn">
+                            <i class="fas fa-sync-alt me-2"></i>Update Status
+                        </button>
+                    {% elif order.status == 'out_for_delivery' %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-truck me-2"></i>
+                            <strong>Order with Delivery Agent</strong><br>
+                            <small>Status updates are now handled by the delivery agent via OTP verification.</small>
+                        </div>
+                    {% elif order.status == 'delivered' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Order Completed</strong><br>
+                            <small>This order has been successfully delivered.</small>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-secondary action-btn" onclick="printOrder()">
+                            <i class="fas fa-print me-2"></i>Print Order
+                        </button>
+                        
+                        <!-- Cancel/Refund Options -->
+                        {% if can_cancel_order %}
+                        <button type="button" class="btn btn-outline-warning action-btn" onclick="showCancelModal()">
+                            <i class="fas fa-times-circle me-2"></i>Cancel Order
+                        </button>
+                        {% endif %}
+                        
+                        {% if order.can_be_refunded %}
+                        <button type="button" class="btn btn-outline-danger action-btn" onclick="showRefundModal()">
+                            <i class="fas fa-money-bill-wave me-2"></i>Process Refund
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Delivery Agent Assignment Card -->
+            {% if order.status == 'packed' %}
+            <div class="card order-detail-card mb-4 border-warning">
+                <div class="card-header bg-warning bg-opacity-10 border-0 pb-0">
+                    <h5 class="mb-0 text-warning">🚚 Ready for Delivery Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-2">
+                                <strong>Order is packed and ready!</strong><br>
+                                <small class="text-muted">Assign a delivery agent to start the delivery process.</small>
+                            </p>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-success">{{ order.items.count }} item{{ order.items.count|pluralize }} packed</span>
+                                <span class="badge bg-info">₹{{ order.total_amount }} total value</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <a href="{% url 'delivery:manual_assignment' order.order_id %}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-truck me-2"></i>
+                                <strong>Assign Delivery Agent</strong>
+                            </a>
+                            <p class="small text-muted mt-1 mb-0">
+                                Select from available agents
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif order.status == 'ready_for_pickup' and order.delivery_assignment %}
+            <div class="card order-detail-card mb-4 border-success">
+                <div class="card-header bg-success bg-opacity-10 border-0 pb-0">
+                    <h5 class="mb-0 text-success">✅ Delivery Agent Assigned</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-2">
+                                <strong>{{ order.delivery_assignment.agent.user.get_full_name }}</strong><br>
+                                <small class="text-muted">
+                                    <i class="fas fa-phone me-1"></i> {{ order.delivery_assignment.agent.user.phone|default:"No phone" }}
+                                    <span class="mx-2">•</span>
+                                    <i class="fas fa-clock me-1"></i> Assigned {{ order.delivery_assignment.assigned_at|timesince }} ago
+                                </small>
+                            </p>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-success">Agent assigned</span>
+                                <span class="badge bg-info">Ready for pickup</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-outline-success" onclick="contactAgent()">
+                                <i class="fas fa-phone me-2"></i>Contact Agent
+                            </button>
+                            <p class="small text-muted mt-1 mb-0">
+                                Agent will pick up soon
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Status Timeline Card -->
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Status History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for history in status_history %}
+                        <div class="timeline-item">
+                            <div class="timeline-dot {% if history.status == order.status %}active{% else %}inactive{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ history.get_status_display }}</h6>
+                                <p class="mb-1 text-muted small">
+                                    {{ history.created_at|date:"M d, Y g:i A" }}
+                                    {% if history.updated_by %}
+                                        by {{ history.updated_by.get_full_name|default:history.updated_by.username }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-history fa-2x mb-2 d-block"></i>
+                            No status history available
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Information Card -->
+            {% if delivery_info %}
+            <div class="card order-detail-card mb-4">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="mb-0">Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Agent:</strong> {{ delivery_info.agent.get_full_name }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Phone:</strong> {{ delivery_info.agent.phone }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Assigned:</strong> {{ delivery_info.assigned_at|date:"M d, Y g:i A" }}
+                    </div>
+                    {% if delivery_info.estimated_delivery_time %}
+                    <div class="mb-2">
+                        <strong>ETA:</strong> {{ delivery_info.estimated_delivery_time|date:"g:i A" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-warning bg-opacity-10 border-0">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Cancel Order</h5>
+                    <small class="text-muted">This action cannot be undone</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="cancelForm" method="post" action="{% url 'stores:cancel_order' order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cancellation Reason</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select reason...</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                            <option value="customer_request">Customer Request</option>
+                            <option value="store_issue">Store Issue</option>
+                            <option value="payment_issue">Payment Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Additional Details</label>
+                        <textarea name="details" class="form-control" rows="3" placeholder="Provide additional details (optional)"></textarea>
+                    </div>
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Note:</strong> 
+                            {% if order.payment_type == 'prepaid' %}
+                            This prepaid order will be automatically refunded after cancellation.
+                            {% else %}
+                            This cash-on-delivery order can be cancelled without refund processing.
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-times-circle me-2"></i>Cancel Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger bg-opacity-10 border-0">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="fas fa-money-bill-wave text-danger me-2"></i>Process Refund</h5>
+                    <small class="text-muted">Refund for delivered order</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="refundForm" method="post" action="{% url 'stores:process_refund' order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Reason</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select reason...</option>
+                            <option value="quality_issue">Quality Issue</option>
+                            <option value="wrong_item">Wrong Item Delivered</option>
+                            <option value="customer_dissatisfied">Customer Dissatisfied</option>
+                            <option value="damaged_product">Damaged Product</option>
+                            <option value="store_error">Store Error</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" name="amount" class="form-control" step="0.01" max="{{ order.total_amount }}" value="{{ order.total_amount }}" required>
+                        </div>
+                        <small class="text-muted">Maximum refund: ₹{{ order.total_amount }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Details</label>
+                        <textarea name="details" class="form-control" rows="3" placeholder="Provide details about the refund reason" required></textarea>
+                    </div>
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Refund Processing:</strong> The refund will be processed to the original payment method within 3-5 business days.
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-money-bill-wave me-2"></i>Process Refund
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status update functionality
+    const updateStatusBtn = document.getElementById('updateStatusBtn');
+    const statusSelect = document.getElementById('statusSelect');
+    
+    if (updateStatusBtn && statusSelect) {
+        updateStatusBtn.addEventListener('click', function() {
+            const newStatus = statusSelect.value;
+            if (!newStatus) {
+                alert('Please select a status to update.');
+                return;
+            }
+            
+            updateOrderStatus(newStatus);
+        });
+    }
+});
+
+function updateOrderStatus(newStatus) {
+    console.log('updateOrderStatus called with status:', newStatus);
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    
+    console.log('CSRF token found:', csrfToken ? 'Yes' : 'No');
+    
+    // Show loading state
+    const updateBtn = document.getElementById('updateStatusBtn');
+    if (!updateBtn) {
+        console.error('Update button not found');
+        alert('Update button not found on page');
+        return;
+    }
+    
+    const originalText = updateBtn.innerHTML;
+    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+    updateBtn.disabled = true;
+    
+    const url = `/stores/api/orders/update-status/{{ order.order_number }}/`;
+    console.log('Making request to:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Show success message
+            showAlert(data.message || 'Status updated successfully!', 'success');
+            
+            // Reload the page to show updated status
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.message || 'Failed to update status.', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showAlert('Network error occurred while updating status.', 'danger');
+    })
+    .finally(() => {
+        // Restore button state
+        updateBtn.innerHTML = originalText;
+        updateBtn.disabled = false;
+    });
+}
+
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function printOrder() {
+    const printWindow = window.open('', '_blank');
+    const orderContent = `
+        <html>
+        <head>
+            <title>Order #{{ order.order_number }}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .order-info { margin-bottom: 20px; }
+                .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .items-table th { background-color: #f5f5f5; }
+                .totals { text-align: right; }
+                .total-row { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>{{ store.name }}</h2>
+                <p>Order #{{ order.order_number }}</p>
+                <p>{{ order.created_at|date:"F d, Y g:i A" }}</p>
+            </div>
+            
+            <div class="order-info">
+                <strong>Customer:</strong> {{ order.user.get_full_name|default:order.user.username }}<br>
+                <strong>Phone:</strong> {{ order.user.phone|default:"N/A" }}<br>
+                <strong>Address:</strong> {{ order.delivery_address.address_line_1 }}{% if order.delivery_address.address_line_2 %}, {{ order.delivery_address.address_line_2 }}{% endif %}, {{ order.delivery_address.city }}, {{ order.delivery_address.state }} {{ order.delivery_address.zip_code }}
+            </div>
+            
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td>₹{{ item.unit_price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₹{{ item.total_price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="totals">
+                <p>Subtotal: ₹{{ order.subtotal }}</p>
+                <p>Delivery Fee: ₹{{ order.delivery_fee }}</p>
+                {% if order.tax_amount > 0 %}<p>Tax: ₹{{ order.tax_amount }}</p>{% endif %}
+                {% if order.discount_amount > 0 %}<p>Discount: -₹{{ order.discount_amount }}</p>{% endif %}
+                <p class="total-row">Total: ₹{{ order.total_amount }}</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(orderContent);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function cancelOrder() {
+    if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+        updateOrderStatus('cancelled');
+    }
+}
+
+function showCancelModal() {
+    const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    cancelModal.show();
+}
+
+function showRefundModal() {
+    const refundModal = new bootstrap.Modal(document.getElementById('refundModal'));
+    refundModal.show();
+}
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-warning bg-opacity-10 border-0">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Cancel Order</h5>
+                    <small class="text-muted">This action cannot be undone</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="cancelForm" method="post" action="{% url 'stores:cancel_order' order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cancellation Reason</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select reason...</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                            <option value="customer_request">Customer Request</option>
+                            <option value="store_issue">Store Issue</option>
+                            <option value="payment_issue">Payment Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Additional Details</label>
+                        <textarea name="details" class="form-control" rows="3" placeholder="Provide additional details (optional)"></textarea>
+                    </div>
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Note:</strong> 
+                            {% if order.payment_method == 'prepaid' %}
+                            This prepaid order will be automatically refunded after cancellation.
+                            {% else %}
+                            This cash-on-delivery order can be cancelled without refund processing.
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-times-circle me-2"></i>Cancel Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger bg-opacity-10 border-0">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="fas fa-money-bill-wave text-danger me-2"></i>Process Refund</h5>
+                    <small class="text-muted">Refund for delivered order</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="refundForm" method="post" action="{% url 'stores:process_refund' order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Reason</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select reason...</option>
+                            <option value="quality_issue">Quality Issue</option>
+                            <option value="wrong_item">Wrong Item Delivered</option>
+                            <option value="customer_dissatisfied">Customer Dissatisfied</option>
+                            <option value="damaged_product">Damaged Product</option>
+                            <option value="store_error">Store Error</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" name="amount" class="form-control" step="0.01" max="{{ order.total_amount }}" value="{{ order.total_amount }}" required>
+                        </div>
+                        <small class="text-muted">Maximum refund: ₹{{ order.total_amount }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Refund Details</label>
+                        <textarea name="details" class="form-control" rows="3" placeholder="Provide details about the refund reason" required></textarea>
+                    </div>
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Refund Processing:</strong> The refund will be processed to the original payment method within 3-5 business days.
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-money-bill-wave me-2"></i>Process Refund
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Edit Address - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Address
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Receiver Name *</label>
+                                {{ form.receiver_name }}
+                                {% if form.receiver_name.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.receiver_name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Phone Number *</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.phone.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Indian mobile number (10 digits)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Type *</label>
+                            {{ form.address_type }}
+                            {% if form.address_type.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_type.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 1 *</label>
+                            {{ form.address_line_1 }}
+                            {% if form.address_line_1.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_line_1.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">House/Flat number, Building name, Street name</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Address Line 2</label>
+                            {{ form.address_line_2 }}
+                            {% if form.address_line_2.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.address_line_2.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Area, Landmark, Sector (Optional)</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">City *</label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.city.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">State *</label>
+                                {{ form.state }}
+                                {% if form.state.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.state.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ZIP Code *</label>
+                                {{ form.zip_code }}
+                                {% if form.zip_code.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.zip_code.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Delhi area PIN code (6 digits)</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Country *</label>
+                                {{ form.country }}
+                                {% if form.country.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.country.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_default }}
+                                <label class="form-check-label" for="{{ form.is_default.id_for_label }}">
+                                    Set as default delivery address
+                                </label>
+                            </div>
+                            {% if form.is_default.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.is_default.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'accounts:address_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Addresses
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-save me-2"></i>Update Address
+                                </button>
+                                <a href="{% url 'accounts:delete_address' address.id %}" 
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to delete this address?')">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Phone number validation
+    const phoneField = document.querySelector('input[name="phone"]');
+    if (phoneField) {
+        phoneField.addEventListener('input', function() {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    }
+    
+    // ZIP code validation
+    const zipCodeField = document.querySelector('input[name="zip_code"]');
+    if (zipCodeField) {
+        zipCodeField.addEventListener('input', function() {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 6 digits
+            if (this.value.length > 6) {
+                this.value = this.value.slice(0, 6);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

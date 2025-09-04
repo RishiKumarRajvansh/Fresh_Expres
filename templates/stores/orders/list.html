@@ -1,0 +1,436 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}All Orders - {{ store.name }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="{% static 'css/order-management.css' %}" rel="stylesheet">
+<style>
+.filter-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.order-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.order-row {
+    transition: background-color 0.2s;
+}
+
+.order-row:hover {
+    background-color: #f8f9fa;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.priority-indicator {
+    width: 4px;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.priority-high { background-color: #dc3545; }
+.priority-medium { background-color: #ffc107; }
+.priority-normal { background-color: #28a745; }
+
+.order-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block store_content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="fas fa-list me-2"></i>All Orders
+            </h1>
+            <p class="text-muted mb-0">{{ store.name }} • Order Management</p>
+        </div>
+        
+        <div class="btn-toolbar">
+            <a href="{% url 'stores:orders_dashboard' %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-chart-line me-2"></i>Dashboard
+            </a>
+            <button class="btn btn-success" onclick="showBulkActions()">
+                <i class="fas fa-tasks me-2"></i>Bulk Actions
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for status_code, status_name in order_statuses %}
+                        <option value="{{ status_code }}" {% if current_filters.status == status_code %}selected{% endif %}>
+                            {{ status_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="payment_status" class="form-label">Payment Status</label>
+                <select name="payment_status" id="payment_status" class="form-select">
+                    <option value="">All Payment Statuses</option>
+                    {% for payment_code, payment_name in payment_statuses %}
+                        <option value="{{ payment_code }}" {% if current_filters.payment_status == payment_code %}selected{% endif %}>
+                            {{ payment_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="date" class="form-label">Date Filter</label>
+                <select name="date" id="date" class="form-select">
+                    <option value="">All Time</option>
+                    <option value="today" {% if current_filters.date == 'today' %}selected{% endif %}>Today</option>
+                    <option value="yesterday" {% if current_filters.date == 'yesterday' %}selected{% endif %}>Yesterday</option>
+                    <option value="week" {% if current_filters.date == 'week' %}selected{% endif %}>This Week</option>
+                    <option value="month" {% if current_filters.date == 'month' %}selected{% endif %}>This Month</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" 
+                       placeholder="Order number, customer name..." value="{{ current_filters.search }}">
+            </div>
+            
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="order-table">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="40">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Time</th>
+                        <th width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="order-row position-relative">
+                        <div class="priority-indicator {% if order.created_at|timesince|slice:':1' == '0' %}priority-high{% elif order.created_at|timesince|slice:':2' == '1' %}priority-medium{% else %}priority-normal{% endif %}"></div>
+                        
+                        <td>
+                            <input type="checkbox" class="order-checkbox" value="{{ order.id }}">
+                        </td>
+                        
+                        <td>
+                            <a href="{% url 'stores:order_detail' order.order_number %}" class="text-decoration-none">
+                                <strong>{{ order.order_number }}</strong>
+                            </a>
+                        </td>
+                        
+                        <td>
+                            <div>{{ order.user.get_full_name|default:order.user.email|truncatechars:25 }}</div>
+                            {% if order.user.phone %}
+                                <small class="text-muted">{{ order.user.phone }}</small>
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            <span class="badge bg-secondary">{{ order.items.count }} items</span>
+                        </td>
+                        
+                        <td>
+                            <strong>₹{{ order.total_amount }}</strong>
+                        </td>
+                        
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                        
+                        <td>
+                            {% if order.payment_status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% elif order.payment_status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif order.payment_status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            <div>{{ order.created_at|date:"M j, H:i" }}</div>
+                            <small class="text-muted">{{ order.created_at|timesince }} ago</small>
+                        </td>
+                        
+                        <td>
+                            <div class="order-actions">
+                                {% if order.status == 'placed' %}
+                                    <button class="btn btn-success btn-action" onclick="quickStatusUpdate('{{ order.order_number }}', 'confirmed')">
+                                        Confirm
+                                    </button>
+                                {% elif order.status == 'confirmed' %}
+                                    <button class="btn btn-warning btn-action" onclick="quickStatusUpdate('{{ order.order_number }}', 'preparing')">
+                                        Prepare
+                                    </button>
+                                {% elif order.status == 'preparing' %}
+                                    <button class="btn btn-info btn-action" onclick="quickStatusUpdate('{{ order.order_number }}', 'packed')">
+                                        Pack
+                                    </button>
+                                {% endif %}
+                                
+                                <a href="{% url 'stores:order_detail' order.order_number %}" class="btn btn-outline-primary btn-action">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5>No orders found</h5>
+                            <p class="text-muted">No orders match your current filters.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{{ request.GET.urlencode|urlencode:'&' }}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ request.GET.urlencode|urlencode:'&' }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ request.GET.urlencode|urlencode:'&' }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{{ request.GET.urlencode|urlencode:'&' }}">Last</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select an action to perform on <span id="selectedCount">0</span> selected orders:</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="performBulkAction('confirm_orders')">
+                        <i class="fas fa-check me-2"></i>Confirm Orders
+                    </button>
+                    <button class="btn btn-warning" onclick="performBulkAction('start_preparing')">
+                        <i class="fas fa-utensils me-2"></i>Start Preparing
+                    </button>
+                    <button class="btn btn-info" onclick="performBulkAction('mark_packed')">
+                        <i class="fas fa-box me-2"></i>Mark as Packed
+                    </button>
+                    <button class="btn btn-primary" onclick="performBulkAction('mark_ready')">
+                        <i class="fas fa-truck me-2"></i>Ready for Pickup
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.order-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    document.getElementById('selectedCount').textContent = selectedCheckboxes.length;
+}
+
+function showBulkActions() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one order.');
+        return;
+    }
+    
+    updateSelectedCount();
+    new bootstrap.Modal(document.getElementById('bulkActionsModal')).show();
+}
+
+function performBulkAction(action) {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    const orderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (orderIds.length === 0) {
+        alert('Please select at least one order.');
+        return;
+    }
+    
+    fetch('/stores/api/orders/bulk-actions/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            action: action,
+            order_ids: orderIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal')).hide();
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while performing the bulk action.');
+    });
+}
+
+function quickStatusUpdate(orderNumber, newStatus) {
+    fetch(`/stores/api/orders/update-status/${orderNumber}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            status: newStatus,
+            notes: `Quick status update to ${newStatus}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the order status.');
+    });
+}
+
+function getCsrfToken() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return '';
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSRF token if not present
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfToken);
+    }
+    
+    // Update selected count when checkboxes change
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+});
+</script>
+{% endblock %}

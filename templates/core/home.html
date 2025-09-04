@@ -1,0 +1,1089 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Fresh Express Delivery - {{ zip_area.city|default:'Your Area' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Main Content - IMPROVED LAYOUT */
+    .main-content {
+        max-width: 100%;
+        margin: 0;
+        padding: 0 10px;
+    }
+
+    @media (min-width: 768px) {
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .main-content {
+            max-width: 95%;
+            padding: 0 2.5%;
+        }
+    }
+
+    /* Categories */
+    .categories {
+        padding: 30px 0;
+        background: white;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    /* Express Delivery Info */
+    .express-delivery-info {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+        border: 1px solid #1565C0;
+    }
+
+    .delivery-icon {
+        font-size: 32px;
+        animation: bounce 2s infinite;
+    }
+
+    .delivery-details {
+        flex: 1;
+    }
+
+    .delivery-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1565C0;
+        margin-bottom: 5px;
+    }
+
+    .delivery-time {
+        font-size: 16px;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .express-badge {
+        background: #FF8F00;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        margin-left: 10px;
+    }
+
+    .delivery-action {
+        flex-shrink: 0;
+    }
+
+    .delivery-btn {
+        background: #1565C0;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .delivery-btn:hover {
+        background: #0D47A1;
+        color: white;
+        text-decoration: none;
+        transform: scale(1.05);
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .modern-category-card {
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        color: white;
+        font-weight: 600;
+        font-size: 18px;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        text-decoration: none;
+        display: block;
+    }
+
+    .modern-category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        color: white;
+        text-decoration: none;
+    }
+
+    .modern-category-card::before {
+        content: '';
+        position: absolute;
+        top: -30px;
+        right: -30px;
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .modern-seafood {
+        background: linear-gradient(135deg, #1565C0 0%, #0277BD 100%);
+    }
+
+    .modern-meat {
+        background: linear-gradient(135deg, #C62828 0%, #AD1457 100%);
+    }
+
+    .modern-vegetables {
+        background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+    }
+
+    .modern-spices {
+        background: linear-gradient(135deg, #FF8F00 0%, #F57C00 100%);
+    }
+
+    .modern-category-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    /* Offers Banner */
+    .modern-offers-banner {
+        background: linear-gradient(135deg, #FF8F00 0%, #F57C00 100%);
+        margin: 30px 0;
+        border-radius: 16px;
+        padding: 25px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(255,143,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-offers-banner::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .modern-offers-banner h4 {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    .modern-offers-banner p {
+        font-size: 14px;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .offer-code {
+        margin-top: 10px;
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .code-label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .code-value {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .code-value:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Featured Products */
+    .modern-featured {
+        padding: 30px 0;
+        background: #FAFAFA;
+        margin: 20px -20px;
+    }
+
+    .featured-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .modern-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .modern-view-all {
+        color: #1565C0;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .modern-view-all:hover {
+        text-decoration: none;
+        color: #0D47A1;
+    }
+
+    .modern-product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        padding: 0;
+    }
+
+    @media (min-width: 768px) {
+        .modern-product-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .modern-product-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+    }
+
+    .modern-product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .modern-product-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .modern-product-image {
+        width: 100%;
+        height: 120px;
+        background: #f8f8f8;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+
+    .modern-product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .modern-fresh-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #2E7D32;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .modern-product-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .modern-product-price {
+        color: #C62828;
+        font-weight: 700;
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    .modern-add-btn {
+        background: linear-gradient(135deg, #FF8F00 0%, #F57C00 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .modern-add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(255,143,0,0.3);
+    }
+
+    /* Quantity Controls */
+    .quantity-controls-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-radius: 25px;
+        padding: 8px 16px;
+        margin-bottom: 10px;
+        width: 120px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .qty-btn {
+        background: #1565C0;
+        color: white;
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .qty-btn:hover {
+        background: #0D47A1;
+        transform: scale(1.1);
+    }
+
+    .quantity {
+        font-weight: 600;
+        font-size: 16px;
+        margin: 0 12px;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    /* Wishlist Button */
+    .wishlist-btn {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e0e0e0;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .wishlist-btn:hover {
+        background: #fff;
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .wishlist-btn i {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .wishlist-btn.active i {
+        color: #E53935;
+    }
+
+    /* Desktop Styles */
+    @media (min-width: 768px) {
+
+        .navbar-custom {
+            padding: 30px 0 !important;
+        }
+
+        .main-content {
+            padding: 0 40px;
+            padding-bottom: 40px;
+        }
+
+        .category-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+        }
+
+        .modern-category-card {
+            padding: 40px 20px;
+        }
+
+        .modern-product-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .modern-offers-banner {
+            margin: 40px 0;
+            padding: 40px;
+        }
+
+        .modern-featured {
+            margin: 40px -40px;
+            padding: 40px 0;
+        }
+
+        .section-title {
+            font-size: 28px;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .category-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .modern-product-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .header-content {
+            padding: 0 20px;
+        }
+    }
+
+    /* Mobile specific adjustments */
+    @media (max-width: 767px) {
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .search-section {
+            margin: 0;
+            width: 100%;
+        }
+
+        .header-actions {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Categories -->
+    <div class="categories">
+        <h3 class="section-title">Shop by Category</h3>
+        <div class="category-grid">
+            <a href="{% url 'catalog:product_list' %}?category=seafood" class="modern-category-card modern-seafood">
+                <span class="modern-category-icon">🐟</span>
+                <div>Fresh Seafood</div>
+            </a>
+            <a href="{% url 'catalog:product_list' %}?category=fresh-meat" class="modern-category-card modern-meat">
+                <span class="modern-category-icon">🥩</span>
+                <div>Fresh Express</div>
+            </a>
+            <a href="{% url 'catalog:product_list' %}?category=poultry" class="modern-category-card modern-meat">
+                <span class="modern-category-icon">🐔</span>
+                <div>Poultry</div>
+            </a>
+            <a href="{% url 'catalog:product_list' %}?category=vegetables" class="modern-category-card modern-vegetables">
+                <span class="modern-category-icon">🥬</span>
+                <div>Vegetables</div>
+            </a>
+            <a href="{% url 'catalog:product_list' %}?category=dairy-products" class="modern-category-card modern-spices">
+                <span class="modern-category-icon">🥛</span>
+                <div>Dairy Products</div>
+            </a>
+            <a href="{% url 'catalog:product_list' %}?category=indian-spices" class="modern-category-card modern-spices">
+                <span class="modern-category-icon">🌶️</span>
+                <div>Indian Spices</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Express Delivery Info -->
+    <div class="express-delivery-info">
+        <div class="delivery-icon">⚡</div>
+        <div class="delivery-details">
+            <div class="delivery-title">Express Delivery</div>
+            <div class="delivery-time">Delivered within 30 minutes</div>
+            <span class="express-badge">🚀 Super Fast</span>
+        </div>
+        <div class="delivery-action">
+            <a href="{% url 'catalog:product_list' %}" class="delivery-btn">Order Now</a>
+        </div>
+    </div>
+
+    <!-- Dynamic Promotional Banners -->
+    {% for banner in home_top_banners %}
+    <div class="modern-offers-banner" style="background-color: {{ banner.background_color }}; color: {{ banner.text_color }};">
+        <h4>{{ banner.title }}</h4>
+        <p>{{ banner.description }}</p>
+        {% if banner.offer_code %}
+        <div class="offer-code">
+            <span class="code-label">Code:</span>
+            <span class="code-value" onclick="copyToClipboard('{{ banner.offer_code }}')">{{ banner.offer_code }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <!-- Fallback static banner if no dynamic banners -->
+    <div class="modern-offers-banner">
+        <h4>🔥 Fresh Arrival Special</h4>
+        <p>Get 20% OFF on first order above ₹500 • Use code: FRESH20</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Featured Products -->
+<div class="modern-featured">
+    <div class="featured-content">
+        <div class="modern-section-header">
+            <h3 class="section-title">Fresh Arrivals</h3>
+            <a href="{% url 'catalog:product_list' %}?fresh=true" class="modern-view-all">View All →</a>
+        </div>
+        <div class="global-product-grid">
+            {% for product in fresh_arrivals %}
+            <div class="global-product-card" data-product-url="{% url 'catalog:product_detail' product.product.slug %}">
+                <div class="product-image">
+                    {% if product.product.image %}
+                    <img src="{{ product.product.image.url }}" alt="{{ product.product.name }}">
+                    {% else %}
+                    <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                        {% if product.product.category.name == 'Seafood' %}
+                        <span style="font-size: 3rem;">🐟</span>
+                        {% elif product.product.category.name == 'Chicken' %}
+                        <span style="font-size: 3rem;">🍗</span>
+                        {% elif product.product.category.name == 'Mutton' %}
+                        <span style="font-size: 3rem;">🥩</span>
+                        {% elif product.product.category.name == 'Vegetables' %}
+                        <span style="font-size: 3rem;">🥬</span>
+                        {% else %}
+                        <span style="font-size: 3rem;">🍖</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Wishlist Button - Only for customers -->
+                    {% if user.is_authenticated and is_customer %}
+                    <button class="wishlist-btn {% if product.id in wishlist_items %}active{% endif %}" 
+                                data-store-product-id="{{ product.id }}">
+                        <i class="{% if product.id in wishlist_items %}fas{% else %}far{% endif %} fa-heart"></i>
+                    </button>
+                    {% endif %}
+                    
+                    <!-- Fresh Badge -->
+                    <div class="category-badge">FRESH</div>
+                    
+                    <!-- Discount Badge -->
+                    {% if product.discount_percentage %}
+                    <div class="discount-badge">{{ product.discount_percentage }}% OFF</div>
+                    {% endif %}
+                    
+                    <!-- Stock Status -->
+                    {% if product.availability_status != 'in_stock' %}
+                    <div class="stock-status">Out of Stock</div>
+                    {% endif %}
+                </div>
+                
+                <div class="product-content" onclick="window.location.href='{% url 'catalog:product_detail' product.product.slug %}';" style="cursor: pointer;">
+                    <div class="product-title">{{ product.product.name }}</div>
+                    
+                    <div class="product-description">{{ product.product.description|truncatewords:12 }}</div>
+                    
+                    <div class="product-meta">
+                        <div class="product-weight">{{ product.product.unit_type }}</div>
+                    </div>
+                    
+                    <div class="product-pricing">
+                        <span class="current-price">₹{{ product.price }}</span>
+                        {% if product.original_price and product.original_price != product.price %}
+                        <span class="original-price">₹{{ product.original_price }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if user.is_authenticated and is_customer %}
+                    <div class="product-actions">
+                        {% if product.availability_status == 'in_stock' %}
+                        <button class="add-to-cart-btn" 
+                                onclick="event.stopPropagation(); addToCartFromCard({{ product.id }}, '{{ product.product.name }}', {{ product.price }});">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        {% else %}
+                        <button class="notify-btn" 
+                                onclick="event.stopPropagation(); notifyWhenAvailable({{ product.id }});">
+                            <i class="fas fa-bell"></i> Notify Me
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <!-- No fresh arrivals available -->
+            <div class="col-12 text-center py-5">
+                <div style="font-size: 4rem; color: #e0e0e0; margin-bottom: 1rem;">📦</div>
+                <h4 style="color: #666; font-weight: 500;">No Fresh Arrivals Yet</h4>
+                <p style="color: #999; margin-bottom: 2rem;">New products will appear here when stores add them.</p>
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-primary">Browse All Products</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+    <div class="modern-featured">
+        <div class="featured-content">
+            <div class="modern-section-header">
+                <h3 class="section-title">Best Sellers</h3>
+                <a href="{% url 'catalog:product_list' %}?popular=true" class="modern-view-all">View All →</a>
+            </div>
+            <div class="global-product-grid">
+                {% for product in best_sellers %}
+                <div class="global-product-card" data-product-url="{% url 'catalog:product_detail' product.product.slug %}">
+                    <div class="product-image">
+                        {% if product.product.image %}
+                        <img src="{{ product.product.image.url }}" alt="{{ product.product.name }}">
+                        {% else %}
+                        <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                            {% if product.product.category.name == 'Seafood' %}
+                            <span style="font-size: 3rem;">🐟</span>
+                            {% elif product.product.category.name == 'Chicken' %}
+                            <span style="font-size: 3rem;">🍗</span>
+                            {% elif product.product.category.name == 'Mutton' %}
+                            <span style="font-size: 3rem;">🥩</span>
+                            {% elif product.product.category.name == 'Vegetables' %}
+                            <span style="font-size: 3rem;">🥬</span>
+                            {% else %}
+                            <span style="font-size: 3rem;">🍖</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Wishlist Button - Only for customers -->
+                        {% if user.is_authenticated and is_customer %}
+                        <button class="wishlist-btn {% if product.id in wishlist_items %}active{% endif %}" 
+                                data-store-product-id="{{ product.id }}">
+                            <i class="{% if product.id in wishlist_items %}fas{% else %}far{% endif %} fa-heart"></i>
+                        </button>
+                        {% endif %}
+                        
+                        <!-- Best Seller Badge -->
+                        <div class="category-badge" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24);">BEST SELLER</div>
+                        
+                        <!-- Discount Badge -->
+                        {% if product.discount_percentage %}
+                        <div class="discount-badge">{{ product.discount_percentage }}% OFF</div>
+                        {% endif %}
+                        
+                        <!-- Stock Status -->
+                        {% if product.availability_status != 'in_stock' %}
+                        <div class="stock-status">Out of Stock</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-content" onclick="window.location.href='{% url 'catalog:product_detail' product.product.slug %}';" style="cursor: pointer;">
+                        <div class="product-title">{{ product.product.name }}</div>
+                        
+                        <div class="product-description">{{ product.product.description|truncatewords:12 }}</div>
+                        
+                        <div class="product-meta">
+                            <div class="product-weight">{{ product.product.unit_type }}</div>
+                        </div>
+                        
+                        <div class="product-pricing">
+                            <span class="current-price">₹{{ product.price }}</span>
+                            {% if product.original_price and product.original_price != product.price %}
+                            <span class="original-price">₹{{ product.original_price }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if user.is_authenticated and is_customer %}
+                        <div class="product-actions">
+                            {% if product.availability_status == 'in_stock' %}
+                            <button class="add-to-cart-btn" 
+                                    onclick="event.stopPropagation(); addToCartFromCard({{ product.id }}, '{{ product.product.name }}', {{ product.price }});">
+                                <i class="fas fa-shopping-cart"></i>Add to Cart
+                            </button>
+                            {% else %}
+                            <button class="add-to-cart-btn disabled">Out of Stock</button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <!-- No best sellers available -->
+                <div class="col-12 text-center py-5">
+                    <div style="font-size: 4rem; color: #e0e0e0; margin-bottom: 1rem;">⭐</div>
+                    <h4 style="color: #666; font-weight: 500;">No Best Sellers Yet</h4>
+                    <p style="color: #999; margin-bottom: 2rem;">Popular products will appear here based on customer orders.</p>
+                    <a href="{% url 'catalog:product_list' %}" class="btn btn-primary">Browse All Products</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div><script>
+function addToCart(productId) {
+    // Add to cart functionality
+    console.log('home.addToCart: sending POST', {'store_product_id': productId});
+    fetch('/orders/cart/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            'store_product_id': productId,
+            'quantity': 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Direct cart counter update
+            const cartElements = document.querySelectorAll('#cart-count, #mobile-cart-count');
+            cartElements.forEach(element => {
+                if (element) {
+                    element.textContent = data.cart_count;
+                    element.style.display = 'inline';
+                }
+            });
+            
+                    } else {
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function showToast(message, type='success') {
+    const toast = document.createElement('div');
+    toast.className = `toast show position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast-header bg-${type === 'success' ? 'success' : 'danger'} text-white">
+            <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+    document.body.appendChild(toast);
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+
+// Quantity control functions
+function showQuantityControls(productId) {
+    const quantityControls = document.getElementById('add-btn-' + productId).previousElementSibling;
+    const addButton = document.getElementById('add-btn-' + productId);
+    
+    quantityControls.style.display = 'flex';
+    addButton.style.display = 'none';
+    
+    // Add to cart with quantity 1
+    addToCart(productId);
+}
+
+function increaseQuantity(productId) {
+    const quantitySpan = document.getElementById('qty-' + productId);
+    let currentQty = parseInt(quantitySpan.textContent);
+    currentQty++;
+    quantitySpan.textContent = currentQty;
+    
+    // Add one more to cart
+    addToCart(productId);
+}
+
+function decreaseQuantity(productId) {
+    const quantitySpan = document.getElementById('qty-' + productId);
+    const quantityControls = quantitySpan.closest('.quantity-controls');
+    const addButton = document.getElementById('add-btn-' + productId);
+    
+    let currentQty = parseInt(quantitySpan.textContent);
+    
+    if (currentQty > 1) {
+        currentQty--;
+        quantitySpan.textContent = currentQty;
+        // Update cart quantity display
+    } else {
+        // Hide quantity controls and show add button
+        quantityControls.style.display = 'none';
+        addButton.style.display = 'block';
+        quantitySpan.textContent = '1'; // Reset to 1
+        // Remove from cart functionality
+    }
+}
+
+// Enhanced Wishlist functionality with better error handling
+function toggleWishlist(storeProductId) {
+    if (!storeProductId) {
+        console.error('Store Product ID is required');
+        return;
+    }
+    
+    // Show loading state on the button
+    const wishlistBtn = document.querySelector(`[data-store-product-id="${storeProductId}"]`);
+    if (wishlistBtn) {
+        wishlistBtn.disabled = true;
+        const originalContent = wishlistBtn.innerHTML;
+        wishlistBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Reset button after 5 seconds regardless
+        setTimeout(() => {
+            wishlistBtn.disabled = false;
+            wishlistBtn.innerHTML = originalContent;
+        }, 5000);
+    }
+    
+    fetch('{% url "accounts:toggle_wishlist" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            store_product_id: storeProductId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                return null;
+            } else if (response.status === 404) {
+                return null;
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.success) {
+            const heartIcon = wishlistBtn ? wishlistBtn.querySelector('i') : null;
+            
+            if (data.added) {
+                // Item was added to wishlist
+                if (wishlistBtn) {
+                    wishlistBtn.classList.add('active');
+                    wishlistBtn.disabled = false;
+                    wishlistBtn.innerHTML = '<i class="fas fa-heart"></i>';
+                }
+                if (heartIcon) {
+                    heartIcon.classList.remove('far');
+                    heartIcon.classList.add('fas');
+                }
+                // No toast message for silent operation
+            } else {
+                // Item was removed from wishlist
+                if (wishlistBtn) {
+                    wishlistBtn.classList.remove('active');
+                    wishlistBtn.disabled = false;
+                    wishlistBtn.innerHTML = '<i class="far fa-heart"></i>';
+                }
+                if (heartIcon) {
+                    heartIcon.classList.remove('fas');
+                    heartIcon.classList.add('far');
+                }
+                // No toast message for silent operation
+            }
+            
+            // Update navbar counters - use global function or fallback
+            updateCartCounters(data);
+        } else if (data) {
+            // Handle error response
+            console.error('Wishlist error:', data.message);
+            if (wishlistBtn) {
+                wishlistBtn.disabled = false;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Wishlist fetch error:', error);
+        if (wishlistBtn) {
+            wishlistBtn.disabled = false;
+        }
+    });
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Delegate wishlist button binding to centralized module
+if (window.WishlistModule && typeof window.WishlistModule.bind === 'function') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.WishlistModule.bind(document));
+    } else {
+        window.WishlistModule.bind(document);
+    }
+}
+
+// Add to cart from product card
+function addToCartFromCard(productId, productName, productPrice) {
+    fetch('/orders/cart/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            store_product_id: productId,
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            
+            // Direct cart counter update
+            const cartElements = document.querySelectorAll('#cart-count, #mobile-cart-count');
+            cartElements.forEach(element => {
+                if (element) {
+                    element.textContent = data.cart_count;
+                    element.style.display = 'inline';
+                }
+            });
+        } else {
+        }
+    })
+    .catch(error => {
+        console.error('Add to cart error:', error);
+    });
+}
+
+// Notify when available function
+function notifyWhenAvailable(productId) {
+    fetch('/catalog/api/notify-when-available/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            product_id: productId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+        } else {
+        }
+    })
+    .catch(error => {
+        console.error('Notify error:', error);
+    });
+}
+
+// Copy to clipboard function for coupon codes
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const toast = document.createElement('div');
+        toast.innerText = `Coupon code "${text}" copied!`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+    }).catch(function() {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        // Show success message
+        alert(`Coupon code "${text}" copied!`);
+    });
+}
+
+// Toast notification function
+// (Removed malformed duplicate toast function - using existing showToast above)
+</script>
+
+{% endblock %}

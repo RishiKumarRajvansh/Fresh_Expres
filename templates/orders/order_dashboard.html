@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Dashboard - Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-placed { background: #e3f2fd; color: #1976d2; }
+.status-confirmed { background: #e8f5e8; color: #388e3c; }
+.status-preparing { background: #fff3e0; color: #f57c00; }
+.status-packed { background: #f3e5f5; color: #7b1fa2; }
+.status-out_for_delivery { background: #e0f2f1; color: #00796b; }
+.status-delivered { background: #e8f5e8; color: #2e7d32; }
+.status-cancelled { background: #ffebee; color: #c62828; }
+
+.order-item {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.2s;
+}
+
+.order-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-quick {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-line me-2"></i>Order Dashboard
+            {% if user_type == 'store_owner' %}
+                <small class="text-muted">- Store Management</small>
+            {% elif user_type == 'admin' %}
+                <small class="text-muted">- System Overview</small>
+            {% endif %}
+        </h1>
+        
+        <div class="btn-toolbar">
+            <a href="{% url 'orders:order_management' %}" class="btn btn-primary">
+                <i class="fas fa-list me-2"></i>Manage Orders
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-number">{{ analytics.total_orders }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-number">₹{{ analytics.total_revenue|floatformat:0 }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-number">₹{{ analytics.average_order_value|floatformat:0 }}</div>
+                <div class="stat-label">Avg Order Value</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-number">{{ status_counts.delivered.count }}</div>
+                <div class="stat-label">Delivered Orders</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Status Breakdown -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>Order Status Breakdown
+                </h5>
+                
+                <div class="row">
+                    {% for status_code, status_info in status_counts.items %}
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <div class="h4 mb-1">{{ status_info.count }}</div>
+                            <small class="text-muted">{{ status_info.name }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Status -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-credit-card me-2"></i>Payment Status
+                </h5>
+                
+                <div class="row">
+                    {% for payment_status, count in analytics.payment_status_breakdown.items %}
+                    <div class="col-6 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <div class="h4 mb-1">{{ count }}</div>
+                            <small class="text-muted text-capitalize">{{ payment_status }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pending Orders -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                        Orders Requiring Attention
+                    </h5>
+                    <small class="text-muted">{{ pending_orders|length }} orders</small>
+                </div>
+                
+                {% if pending_orders %}
+                    {% for order in pending_orders %}
+                    <div class="order-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{% url 'orders:order_detail_management' order.order_number %}" class="text-decoration-none">
+                                        {{ order.order_number }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    {{ order.user.get_full_name|default:order.user.email }}
+                                    • ₹{{ order.total_amount }}
+                                    • {{ order.created_at|timesince }} ago
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge status-{{ order.status }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if user_type == 'store_owner' or user_type == 'admin' %}
+                        <div class="quick-actions mt-2">
+                            {% if order.status == 'placed' %}
+                                <button class="btn btn-sm btn-success btn-quick" onclick="updateOrderStatus('{{ order.order_number }}', 'confirmed')">
+                                    Confirm
+                                </button>
+                            {% elif order.status == 'confirmed' %}
+                                <button class="btn btn-sm btn-warning btn-quick" onclick="updateOrderStatus('{{ order.order_number }}', 'preparing')">
+                                    Start Preparing
+                                </button>
+                            {% elif order.status == 'preparing' %}
+                                <button class="btn btn-sm btn-info btn-quick" onclick="updateOrderStatus('{{ order.order_number }}', 'packed')">
+                                    Mark Packed
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-check-circle fa-3x mb-3"></i>
+                        <p class="mb-0">No orders requiring immediate attention</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Orders -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Orders
+                    </h5>
+                    <a href="{% url 'orders:order_management' %}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                
+                {% for order in recent_orders %}
+                <div class="order-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                <a href="{% url 'orders:order_detail_management' order.order_number %}" class="text-decoration-none">
+                                    {{ order.order_number }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                {% if user_type == 'admin' %}
+                                    {{ order.store.name }} •
+                                {% endif %}
+                                {{ order.user.get_full_name|default:order.user.email }}
+                                • ₹{{ order.total_amount }}
+                            </small>
+                            <br>
+                            <small class="text-muted">{{ order.created_at|timesince }} ago</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ order.get_status_display }}
+                            </span>
+                            {% if order.payment_status == 'pending' %}
+                                <br><small class="text-danger">Payment Pending</small>
+                            {% elif order.payment_status == 'failed' %}
+                                <br><small class="text-danger">Payment Failed</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="mb-0">No recent orders found</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Order Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Order:</label>
+                    <strong id="modalOrderNumber"></strong>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New Status:</label>
+                    <strong id="modalNewStatus"></strong>
+                </div>
+                <div class="mb-3">
+                    <label for="modalNotes" class="form-label">Notes (Optional):</label>
+                    <textarea class="form-control" id="modalNotes" rows="3" placeholder="Add any notes about this status change..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmStatusUpdate()">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentOrderNumber = '';
+let currentNewStatus = '';
+
+function updateOrderStatus(orderNumber, newStatus) {
+    currentOrderNumber = orderNumber;
+    currentNewStatus = newStatus;
+    
+    document.getElementById('modalOrderNumber').textContent = orderNumber;
+    document.getElementById('modalNewStatus').textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace('_', ' ');
+    document.getElementById('modalNotes').value = '';
+    
+    new bootstrap.Modal(document.getElementById('statusUpdateModal')).show();
+}
+
+function confirmStatusUpdate() {
+    const notes = document.getElementById('modalNotes').value.trim();
+    
+    fetch(`/orders/api/update-status/${currentOrderNumber}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            status: currentNewStatus,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('statusUpdateModal')).hide();
+            
+            // Show success message
+            showNotification(data.message, 'success');
+            
+            // Refresh the page to show updated data
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while updating the order status', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Add CSRF token for AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfToken);
+    }
+});
+</script>
+{% endblock %}

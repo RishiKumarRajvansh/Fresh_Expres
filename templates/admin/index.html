@@ -1,0 +1,148 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_urls %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/admin-custom.css' %}">
+{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block nav-sidebar %}
+    {% include "admin/nav_sidebar.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="dashboard-welcome">
+        <i class="fas fa-tachometer-alt" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+    <h1>Welcome to Fresh Express Admin</h1>
+        <p>Manage your platform efficiently with comprehensive tools and insights</p>
+    </div>
+
+    <!-- Horizontal Quick Actions -->
+    <div class="quick-actions-horizontal">
+        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        <div class="quick-actions-grid">
+            <a href="{% url 'admin:accounts_user_add' %}" class="quick-action-btn">
+                <i class="fas fa-user-plus"></i>
+                <span>Add User</span>
+            </a>
+            <a href="{% url 'admin:stores_store_add' %}" class="quick-action-btn">
+                <i class="fas fa-store"></i>
+                <span>Add Store</span>
+            </a>
+            <a href="{% url 'admin:catalog_product_add' %}" class="quick-action-btn">
+                <i class="fas fa-plus"></i>
+                <span>Add Product</span>
+            </a>
+            <a href="{% url 'admin:orders_order_changelist' %}" class="quick-action-btn">
+                <i class="fas fa-list"></i>
+                <span>View Orders</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ user_count|default:"0" }}</h3>
+            <p><i class="fas fa-users"></i> Total Users</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #28a745;">
+            <h3>{{ store_count|default:"0" }}</h3>
+            <p><i class="fas fa-store"></i> Active Stores</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #ffc107;">
+            <h3>{{ product_count|default:"0" }}</h3>
+            <p><i class="fas fa-box"></i> Products</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #17a2b8;">
+            <h3>{{ orders_today|default:"0" }}</h3>
+            <p><i class="fas fa-shopping-cart"></i> Orders Today</p>
+        </div>
+    </div>
+
+    <div class="app-list">
+        {% if app_list %}
+            {% for app in app_list %}
+                <div class="section app-{{ app.app_label }}">
+                    <h2>
+                        {% if app.app_label == 'accounts' %}
+                            <i class="fas fa-users"></i>
+                        {% elif app.app_label == 'stores' %}
+                            <i class="fas fa-store"></i>
+                        {% elif app.app_label == 'catalog' %}
+                            <i class="fas fa-boxes"></i>
+                        {% elif app.app_label == 'orders' %}
+                            <i class="fas fa-shopping-cart"></i>
+                        {% elif app.app_label == 'delivery' %}
+                            <i class="fas fa-truck"></i>
+                        {% elif app.app_label == 'payments' %}
+                            <i class="fas fa-credit-card"></i>
+                        {% elif app.app_label == 'core' %}
+                            <i class="fas fa-cog"></i>
+                        {% elif app.app_label == 'chat' %}
+                            <i class="fas fa-comments"></i>
+                        {% elif app.app_label == 'locations' %}
+                            <i class="fas fa-map-marker-alt"></i>
+                        {% else %}
+                            <i class="fas fa-cube"></i>
+                        {% endif %}
+                        <a href="{{ app.app_url }}" class="section">{{ app.name }}</a>
+                    </h2>
+
+                    {% if app.models %}
+                        <table>
+                            {% for model in app.models %}
+                                <tr class="model-{{ model.object_name|lower }}">
+                                    <td style="width: 60%;">
+                                        {% if model.admin_url %}
+                                            <a href="{{ model.admin_url }}" class="changelink">
+                                                <i class="fas fa-list"></i> {{ model.name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="model-label"><i class="fas fa-cube"></i> {{ model.name }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right; width: 40%;">
+                                        {% if model.add_url %}
+                                            <a href="{{ model.add_url }}" class="addlink" title="Add {{ model.name|lower }}">
+                                                <i class="fas fa-plus"></i> Add
+                                            </a>
+                                        {% endif %}
+                                        {% if model.admin_url %}
+                                            {% if model.view_only %}
+                                                <a href="{{ model.admin_url }}" class="viewlink" title="View {{ model.name|lower }}">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ model.admin_url }}" class="changelink" title="Manage {{ model.name|lower }}">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="section">
+                    <h2><i class="fas fa-exclamation-triangle"></i> No apps available</h2>
+                    <p>You don't have permission to view or edit anything.</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<!-- Sidebar removed - using horizontal layout -->
+{% endblock %}

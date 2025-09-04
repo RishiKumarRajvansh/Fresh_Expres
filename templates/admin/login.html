@@ -1,0 +1,201 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/login.css' %}">
+    <style>
+        body.login {
+            background: linear-gradient(135deg, #C5282F 0%, #FA8072 50%, #F4D03F 100%) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .login #container {
+            background: none !important;
+            width: 100%;
+            max-width: 400px;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login #content {
+            background: rgba(255, 254, 247, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(197, 40, 47, 0.2);
+            border: 2px solid rgba(255, 248, 220, 0.8);
+        }
+
+        .login #content-main {
+            width: 100% !important;
+            float: none !important;
+            margin: 0 !important;
+        }
+
+        .login form {
+            margin: 0;
+        }
+
+        .login .form-row {
+            margin-bottom: 20px;
+        }
+
+        .login label {
+            display: block;
+            color: #2C1810;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .login input[type="text"],
+        .login input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E8DCC0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #FFFEF7;
+            color: #2C1810;
+            box-sizing: border-box;
+        }
+
+        .login input[type="text"]:focus,
+        .login input[type="password"]:focus {
+            border-color: #C5282F;
+            box-shadow: 0 0 0 3px rgba(197, 40, 47, 0.15);
+            outline: none;
+            background: #FFF8DC;
+        }
+
+        .login .submit-row {
+            margin-top: 30px;
+        }
+
+        .login input[type="submit"] {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #C5282F 0%, #FA8072 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(197, 40, 47, 0.3);
+            background: linear-gradient(135deg, #8B1538 0%, #C5282F 100%);
+        }
+
+        .login .errornote {
+            background: #FDF2F2;
+            color: #E74C3C;
+            border: 2px solid #C5282F;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .login h1 {
+            text-align: center;
+            color: #2C1810;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .password-reset-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .password-reset-link a {
+            color: #C5282F;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .password-reset-link a:hover {
+            text-decoration: underline;
+            color: #8B1538;
+        }
+
+        #header {
+            display: none;
+        }
+
+        .login #branding {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block usertools %}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+        <div class="form-row">
+            <h1>{% trans 'Fresh Express Admin' %}</h1>
+            {% if form.errors %}
+                <div class="errornote">
+                    {% if form.errors.items|length == 1 %}
+                        {% trans "Please correct the error below." %}
+                    {% else %}
+                        {% trans "Please correct the errors below." %}
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            <div class="form-row">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+                {% if form.username.errors %}
+                    {{ form.username.errors }}
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                {% if form.password.errors %}
+                    {{ form.password.errors }}
+                {% endif %}
+                <input type="hidden" name="next" value="{{ next }}" />
+            </div>
+        </div>
+
+        {% url 'admin_password_reset' as password_reset_url %}
+        {% if password_reset_url %}
+        <div class="password-reset-link">
+            <a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+        </div>
+        {% endif %}
+        
+        <div class="submit-row">
+            <input type="submit" value="{% trans 'Log in' %}" />
+        </div>
+    </form>
+</div>
+{% endblock %}

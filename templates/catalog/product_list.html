@@ -1,0 +1,344 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}
+    {% if category %}{{ category.name }} - {% endif %}Products - Fresh Express
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar Categories -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Categories</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'catalog:product_list' %}" 
+                           class="list-group-item list-group-item-action {% if not request.GET.category %}active{% endif %}">
+                            All Products
+                        </a>
+                        {% for cat in categories %}
+                        <a href="{% url 'catalog:product_list' %}?category={{ cat.slug }}" 
+                           class="list-group-item list-group-item-action {% if request.GET.category == cat.slug %}active{% endif %}">
+                            <i class="{{ cat.icon|default:'fas fa-tag' }} me-2"></i>
+                            {{ cat.name }}
+                            <small class="text-muted">({{ cat.product_count|default:'' }})</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <form method="GET" class="mb-0">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" 
+                                   placeholder="Search products..." 
+                                   value="{{ request.GET.q }}">
+                            <button class="btn btn-success" type="submit" 
+                                    style="background-color: #4CAF50; border-color: #4CAF50;">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        {% if request.GET.category %}
+                            <input type="hidden" name="category" value="{{ request.GET.category }}">
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="col-lg-9">
+            {% if search_query %}
+            <div class="mb-3">
+                <h5>Search results for "{{ search_query }}"</h5>
+                <small class="text-muted">{{ products|length }} products found</small>
+            </div>
+            {% endif %}
+
+            {% if products %}
+            <!-- Products Grid using Global Product Card -->
+            <div class="global-product-grid category-grid">
+                {% for store_product in products %}
+                <div class="global-product-card" data-product-url="{% url \"catalog:product_detail\" store_product.product.slug %}">
+                    <div class="product-image">
+                        {% if store_product.product.image %}
+                        <img src="{{ store_product.product.image.url }}" alt="{{ store_product.product.name }}">
+                        {% else %}
+                        <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                            <i class="fas fa-image text-muted fa-3x"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Wishlist Button -->
+                        {% if user.is_authenticated %}
+            <button class="wishlist-btn {% if store_product.id in wishlist_items %}active{% endif %}" 
+                data-store-product-id="{{ store_product.id }}">
+                            <i class="{% if store_product.id in wishlist_items %}fas{% else %}far{% endif %} fa-heart"></i>
+                        </button>
+                        {% endif %}
+                        
+                        <!-- Discount Badge -->
+                        {% if store_product.discount_percentage %}
+                        <div class="discount-badge">{{ store_product.discount_percentage }}% OFF</div>
+                        {% endif %}
+                        
+                        <!-- Category Badge -->
+                        {% if store_product.product.category %}
+                        <div class="category-badge">{{ store_product.product.category.name }}</div>
+                        {% endif %}
+                        
+                        <!-- Stock Status for Out of Stock -->
+                        {% if store_product.availability_status != 'in_stock' %}
+                        <div class="stock-status">Out of Stock</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-content" onclick="navigateToProduct(this)" style="cursor: pointer;" data-product-url="{% url 'catalog:product_detail' store_product.product.slug %}">
+                        <div class="product-title">{{ store_product.product.name }}</div>
+                        
+                        <div class="product-description">{{ store_product.product.description|truncatewords:12 }}</div>
+                        
+                        <div class="product-meta">
+                            {% if store_product.product.unit_type %}
+                            <div class="product-weight">{{ store_product.product.unit_type }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-pricing">
+                            <span class="current-price">₹{{ store_product.price }}</span>
+                            {% if store_product.original_price and store_product.original_price != store_product.price %}
+                            <span class="original-price">₹{{ store_product.original_price }}</span>
+                            {% endif %}
+                            {% if store_product.discount_percentage %}
+                            <span class="discount-percent">{{ store_product.discount_percentage }}% OFF</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if store_product.stock_quantity < 10 and store_product.availability_status == 'in_stock' %}
+                        <div class="text-warning mb-2" style="font-size: 0.75rem;">
+                            <i class="fas fa-exclamation-triangle"></i> Only {{ store_product.stock_quantity }} left
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-actions" onclick="event.stopPropagation();">
+                        {% if store_product.availability_status == 'in_stock' %}
+                        <button class="add-to-cart-btn" 
+                                data-store-product-id="{{ store_product.id }}">
+                            <i class="fas fa-shopping-cart"></i>Add to Cart
+                        </button>
+                        {% else %}
+                        <button class="add-to-cart-btn" style="background: #6c757d; cursor: not-allowed;" disabled>
+                            <i class="fas fa-times"></i>Out of Stock
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav>
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Last</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                <h4>No Products Found</h4>
+                {% if search_query %}
+                <p class="text-muted">No products match your search for "{{ search_query }}"</p>
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-success">View All Products</a>
+                {% elif not selected_store %}
+                <p class="text-muted">Please select a ZIP code to view products</p>
+                <!-- Header location selector will guide the user to set ZIP. -->
+                {% else %}
+                <p class="text-muted">{{ selected_store.name }} doesn't have any products available right now.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add to cart functionality is now handled by the main.js file
+    // Wishlist functionality for catalog page
+    initializeCatalogWishlist();
+});
+
+// Enhanced Wishlist functionality for catalog page
+function toggleWishlist(storeProductId) {
+    if (!storeProductId) {
+        console.error('Store Product ID is required');
+        return;
+    }
+    
+    // Show loading state on the button
+    const wishlistBtn = document.querySelector(`[data-store-product-id="${storeProductId}"]`);
+    if (wishlistBtn) {
+        wishlistBtn.disabled = true;
+        const originalContent = wishlistBtn.innerHTML;
+        wishlistBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Reset button after 5 seconds regardless
+        setTimeout(() => {
+            wishlistBtn.disabled = false;
+            wishlistBtn.innerHTML = originalContent;
+        }, 5000);
+    }
+    
+    fetch('{% url "accounts:toggle_wishlist" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            store_product_id: storeProductId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                return null;
+            } else if (response.status === 404) {
+                return null;
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.success) {
+            const heartIcon = wishlistBtn ? wishlistBtn.querySelector('i') : null;
+            
+            if (data.added) {
+                // Item was added to wishlist
+                if (wishlistBtn) {
+                    wishlistBtn.classList.add('active');
+                    wishlistBtn.disabled = false;
+                    wishlistBtn.innerHTML = '<i class="fas fa-heart"></i>';
+                }
+                if (heartIcon) {
+                    heartIcon.classList.remove('far');
+                    heartIcon.classList.add('fas');
+                }
+                // No toast message for silent operation
+            } else {
+                // Item was removed from wishlist
+                if (wishlistBtn) {
+                    wishlistBtn.classList.remove('active');
+                    wishlistBtn.disabled = false;
+                    wishlistBtn.innerHTML = '<i class="far fa-heart"></i>';
+                }
+                if (heartIcon) {
+                    heartIcon.classList.remove('fas');
+                    heartIcon.classList.add('far');
+                }
+                // No toast message for silent operation
+            }
+            
+            // Update navbar counters using global function
+            if (window.updateNavbarCounts) {
+                window.updateNavbarCounts(data);
+            }
+        } else if (data) {
+            console.error('Catalog wishlist error:', data.message);
+            if (wishlistBtn) {
+                wishlistBtn.disabled = false;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Catalog wishlist fetch error:', error);
+        if (wishlistBtn) {
+            wishlistBtn.disabled = false;
+        }
+    });
+}
+
+// Use centralized wishlist module binding
+function initializeCatalogWishlist() {
+    if (window.WishlistModule && typeof window.WishlistModule.bind === 'function') {
+        window.WishlistModule.bind(document);
+    }
+}
+
+// Toast notification function
+function showToast(message, type='info') {
+    const toast = document.createElement('div');
+    toast.className = 'toast show position-fixed top-0 end-0 m-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast-header ${type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-secondary text-white'}">
+            <strong class="me-auto">${type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice'}</strong>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Navigation helper used by product-content clickable area
+function navigateToProduct(el) {
+    if (!el) return;
+    const url = el.getAttribute('data-product-url') || (el.closest ? el.closest('.global-product-card')?.getAttribute('data-product-url') : null);
+    if (url) window.location.href = url;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "accounts/auth_base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if user_type == 'store' %}Store Admin Login
+    {% elif user_type == 'delivery' %}Delivery Login
+    {% else %}Staff Login{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.auth-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.auth-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.auth-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.form-control-custom {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.form-control-custom:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+}
+
+.auth-links {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.auth-links a {
+    color: #1e40af;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.account-type-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 2rem;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #666;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.type-btn.active {
+    border-color: #1e40af;
+    background: #1e40af;
+    color: white;
+}
+
+.type-btn:hover {
+    border-color: #1e40af;
+    color: #1e40af;
+}
+
+.type-btn.active:hover {
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-icon">
+            {% if user_type == 'store' %}
+                <i class="fas fa-store"></i>
+            {% elif user_type == 'delivery' %}
+                <i class="fas fa-motorcycle"></i>
+            {% else %}
+                <i class="fas fa-user-tie"></i>
+            {% endif %}
+        </div>
+        
+        <h1 class="auth-title">
+            {% if user_type == 'store' %}🏪 Store Portal
+            {% elif user_type == 'delivery' %}🏍️ Delivery Portal
+            {% else %}👔 Staff Portal{% endif %}
+        </h1>
+        
+        <p class="auth-subtitle">Sign in to your account</p>
+        
+        <!-- Account Type Selector -->
+        <div class="account-type-selector">
+            <a href="?type=store" class="type-btn {% if user_type == 'store' %}active{% endif %}">Store</a>
+            <a href="?type=delivery" class="type-btn {% if user_type == 'delivery' %}active{% endif %}">Delivery</a>
+        </div>
+        
+        <!-- Admin redirect notice -->
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="user_type" value="{{ user_type }}">
+            
+            <input type="email" name="email" class="form-control form-control-custom" 
+                   placeholder="Email Address" required>
+            
+            <input type="password" name="password" class="form-control form-control-custom" 
+                   placeholder="Password" required>
+            
+            <button type="submit" class="btn btn-primary-custom">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+
+        <div class="auth-links">
+            <p><a href="{% url 'accounts:password_reset' %}">Forgot Password?</a></p>
+            {% if user_type == 'store' %}
+                <p>New Store Owner? <a href="{% url 'accounts:store_register' %}">Register Your Store</a></p>
+                <p>Store Staff? <a href="{% url 'accounts:staff_login' %}">Staff Login</a></p>
+            {% elif user_type == 'delivery' %}
+                <p>New Delivery Agent? <a href="{% url 'accounts:delivery_register' %}">Join Delivery Team</a></p>
+            {% endif %}
+            <p>Switch to: 
+                {% if user_type == 'store' %}
+                    <a href="{% url 'accounts:email_login' %}?type=delivery">Delivery Login</a> | 
+                    <a href="{% url 'accounts:staff_login' %}">Staff Login</a>
+                {% elif user_type == 'delivery' %}
+                    <a href="{% url 'accounts:email_login' %}?type=store">Store Login</a> | 
+                    <a href="{% url 'accounts:staff_login' %}">Staff Login</a>
+                {% else %}
+                    <a href="{% url 'accounts:email_login' %}?type=store">Store Login</a> | 
+                    <a href="{% url 'accounts:email_login' %}?type=delivery">Delivery Login</a>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

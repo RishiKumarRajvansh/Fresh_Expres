@@ -1,0 +1,244 @@
+{% extends 'dashboards/base_dashboard.html' %}
+{% load static %}
+
+{% block header_actions %}
+<a href="{% url 'orders:cart' %}" class="btn btn-outline-light">
+    <i class="fas fa-shopping-cart me-1"></i>
+    Cart {% if total_cart_items %}({{ total_cart_items }}){% endif %}
+</a>
+<a href="{% url 'accounts:profile' %}" class="btn btn-light">
+    <i class="fas fa-user me-1"></i>Profile
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-12">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-info);">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ recent_orders|length }}</div>
+                <div class="stat-label">Recent Orders</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-danger);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ wishlist_count }}</div>
+                <div class="stat-label">Wishlist Items</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-warning);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ loyalty_points|default:0 }}</div>
+                <div class="stat-label">Loyalty Points</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: var(--dashboard-success);">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ selected_zip_code|default:"Not Set" }}</div>
+                <div class="stat-label">Delivery Area</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-12">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </div>
+            <div class="section-body">
+                <div class="quick-actions">
+                    <a href="{% url 'catalog:product_list' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <span>Browse Products</span>
+                    </a>
+                    
+                    <a href="{% url 'orders:order_list' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <span>My Orders</span>
+                    </a>
+                    
+                    <a href="{% url 'accounts:address_list' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <span>Addresses</span>
+                    </a>
+                    
+                    {% if user.loyalty_account %}
+                    <a href="{% url 'accounts:loyalty_dashboard' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <span>Rewards</span>
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'chat:chat_list' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <span>Support</span>
+                    </a>
+                    
+                    <a href="{% url 'core:change_zip' %}" class="quick-action-btn">
+                        <div class="action-icon">
+                            <i class="fas fa-location-arrow"></i>
+                        </div>
+                        <span>Change Area</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Orders -->
+    <div class="col-md-8">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-clock me-2"></i>Recent Orders
+            </div>
+            <div class="section-body">
+                {% if recent_orders %}
+                    {% for order in recent_orders %}
+                    <div class="list-item">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1rem;">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Order #{{ order.order_number|default:order.id }}</div>
+                                <div class="text-muted small">
+                                    {{ order.created_at|timesince }} ago • 
+                                    ₹{{ order.total_amount }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                            <div class="mt-1">
+                                <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'orders:order_list' %}" class="btn btn-primary">
+                            View All Orders
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No orders yet</h5>
+                        <p class="text-muted">Start shopping to see your orders here</p>
+                        <a href="{% url 'catalog:product_list' %}" class="btn btn-primary">
+                            Start Shopping
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Summary -->
+    <div class="col-md-4">
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-user-circle me-2"></i>Account Summary
+            </div>
+            <div class="section-body">
+                <div class="list-item">
+                    <span>Member Since</span>
+                    <span class="fw-bold">{{ user.date_joined|date:"M Y" }}</span>
+                </div>
+                
+                <div class="list-item">
+                    <span>Email Status</span>
+                    {% if user.email_verified %}
+                        <span class="badge bg-success">Verified</span>
+                    {% else %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% endif %}
+                </div>
+                
+                <div class="list-item">
+                    <span>Phone Status</span>
+                    {% if user.phone_verified %}
+                        <span class="badge bg-success">Verified</span>
+                    {% else %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% endif %}
+                </div>
+                
+                {% if loyalty_points %}
+                <div class="list-item">
+                    <span>Loyalty Points</span>
+                    <span class="fw-bold text-success">{{ loyalty_points }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary w-100">
+                        Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loyalty Program Info -->
+        {% if user.loyalty_account %}
+        <div class="section-card">
+            <div class="section-header">
+                <i class="fas fa-award me-2"></i>Loyalty Program
+            </div>
+            <div class="section-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-medal fa-2x text-warning"></i>
+                </div>
+                <h6 class="fw-bold">{{ user.loyalty_account.current_tier }} Member</h6>
+                <p class="small text-muted mb-3">
+                    You have {{ loyalty_points }} points available
+                </p>
+                <a href="{% url 'accounts:loyalty_dashboard' %}" class="btn btn-warning btn-sm">
+                    View Rewards
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

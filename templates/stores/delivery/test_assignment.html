@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Assignment Page</title>
+</head>
+<body>
+    <h1>Test Assignment Page</h1>
+    <p>User: {{ user }}</p>
+    <p>Is Authenticated: {{ user.is_authenticated }}</p>
+    <p>User Type: {{ user.user_type }}</p>
+    {% if user.store_owner_profile %}
+        <p>Store: {{ user.store_owner_profile.store.name }}</p>
+    {% endif %}
+    
+    <h2>Available Delivery Agents:</h2>
+    {% for agent in agents %}
+        <p>Agent: {{ agent.user.first_name }} {{ agent.user.last_name }} - Status: {{ agent.status }}</p>
+    {% empty %}
+        <p>No delivery agents available</p>
+    {% endfor %}
+    
+    <h2>Order Details:</h2>
+    <p>Order ID: {{ order.order_id }}</p>
+    <p>Status: {{ order.status }}</p>
+    {% if order.delivery_agent %}
+        <p>Current Agent: {{ order.delivery_agent.user.first_name }}</p>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,840 @@
+/* Fresh Express Platform - Solid Color Theme */
+/* Food Psychology Optimized for Appetite Stimulation */
+
+:root {
+    /* Primary Colors - Maximum Appetite Appeal */
+    --appetite-red: #D32F2F;        /* Deep red - hunger trigger */
+    --meat-burgundy: #8B0000;       /* Dark burgundy - premium meat */
+    --fresh-orange: #FF5722;        /* Vibrant orange - freshness */
+    --golden-spice: #FF8F00;        /* Golden orange - spice quality */
+    
+    /* Category Colors */
+    --chicken-color: #D32F2F;       /* Appetite red for chicken */
+    --mutton-color: #8B0000;        /* Dark burgundy for mutton */
+    --seafood-color: #1565C0;       /* Ocean blue for seafood */
+    --spice-color: #FF8F00;         /* Golden for spices */
+    
+    /* Semantic Colors */
+    --success-color: #4CAF50;       /* Success green */
+    --warning-color: #FFC107;       /* Warning amber */
+    --danger-color: #F44336;        /* Error red */
+    --info-color: #2196F3;          /* Info blue */
+    
+    /* Text System */
+    --text-primary: #212121;        /* Primary text - maximum contrast */
+    --text-secondary: #424242;      /* Secondary text */
+    --text-muted: #757575;          /* Muted text */
+    --text-inverse: #FFFFFF;        /* White text on dark */
+    
+    /* Background System */
+    --bg-primary: #FFFFFF;          /* Pure white */
+    --bg-secondary: #F5F5F5;        /* Light gray */
+    --bg-accent: #FFF8E1;           /* Warm cream accent */
+    --bg-dark: #212121;             /* Dark background */
+    
+    /* Border System */
+    --border-light: #E0E0E0;        /* Light borders */
+    --border-medium: #BDBDBD;       /* Medium borders */
+    --border-accent: var(--golden-spice); /* Accent borders */
+}
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Layout System */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navigation */
+.navbar {
+    background-color: var(--appetite-red) !important;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.15);
+    border-bottom: 2px solid var(--meat-burgundy);
+    padding: 0.75rem 0 !important;
+    min-height: 70px !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* ZIP code display positioning */
+.navbar .d-flex.align-items-center {
+    margin: 0 !important;
+    padding: 0.5rem 0 !important;
+}
+
+.navbar .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.navbar .fas.fa-map-marker-alt {
+    color: var(--golden-spice) !important;
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--text-inverse) !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.navbar-brand:hover {
+    color: var(--golden-spice) !important;
+}
+
+.navbar-nav .nav-link {
+    color: var(--text-inverse) !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    padding: 0.5rem 1rem !important;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--golden-spice) !important;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+/* Buttons - Solid Colors Only */
+.btn {
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    text-decoration: none !important;
+}
+
+.btn-primary {
+    background-color: var(--appetite-red);
+    border-color: var(--appetite-red);
+    color: var(--text-inverse);
+}
+
+.btn-primary:hover {
+    background-color: var(--meat-burgundy);
+    border-color: var(--meat-burgundy);
+    color: var(--text-inverse);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 0, 0, 0.3);
+}
+
+.btn-secondary {
+    background-color: var(--fresh-orange);
+    border-color: var(--fresh-orange);
+    color: var(--text-inverse);
+}
+
+.btn-secondary:hover {
+    background-color: #E64A19;
+    border-color: #E64A19;
+    color: var(--text-inverse);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: var(--text-inverse);
+}
+
+.btn-success:hover {
+    background-color: #388E3C;
+    border-color: #388E3C;
+    color: var(--text-inverse);
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: var(--text-primary);
+}
+
+.btn-warning:hover {
+    background-color: #FFB300;
+    border-color: #FFB300;
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: var(--text-inverse);
+}
+
+.btn-danger:hover {
+    background-color: #D32F2F;
+    border-color: #D32F2F;
+    color: var(--text-inverse);
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: var(--appetite-red);
+    color: var(--appetite-red);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--appetite-red);
+    border-color: var(--appetite-red);
+    color: var(--text-inverse);
+}
+
+/* Cards */
+.card {
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    border-color: var(--golden-spice);
+}
+
+.card-header {
+    background-color: var(--bg-accent);
+    border-bottom: 2px solid var(--border-accent);
+    font-weight: 600;
+}
+
+.card-title {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.card-text {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Category-Specific Styling */
+.chicken-category {
+    border-left: 4px solid var(--chicken-color);
+}
+
+.chicken-category .card-header {
+    background-color: rgba(211, 47, 47, 0.1);
+}
+
+.mutton-category {
+    border-left: 4px solid var(--mutton-color);
+}
+
+.mutton-category .card-header {
+    background-color: rgba(139, 0, 0, 0.1);
+}
+
+.seafood-category {
+    border-left: 4px solid var(--seafood-color);
+}
+
+.seafood-category .card-header {
+    background-color: rgba(21, 101, 192, 0.1);
+}
+
+.spice-category {
+    border-left: 4px solid var(--spice-color);
+}
+
+.spice-category .card-header {
+    background-color: rgba(255, 143, 0, 0.1);
+}
+
+/* Forms */
+.form-control, .form-select {
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--golden-spice);
+    box-shadow: 0 0 0 0.2rem rgba(255, 143, 0, 0.25);
+    outline: none;
+}
+
+.form-control:valid {
+    border-color: var(--success-color);
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-color);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Location Selector */
+.location-dropdown .location-selector {
+    background-color: var(--golden-spice);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 6px rgba(255, 143, 0, 0.2);
+}
+
+.location-dropdown .location-selector:hover {
+    background-color: #FFB300;
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(255, 143, 0, 0.3);
+}
+
+.location-dropdown-menu {
+    border-radius: 12px;
+    border: 2px solid var(--border-accent);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    min-width: 300px;
+}
+
+/* Cart Badge */
+.cart-badge {
+    background-color: var(--appetite-red) !important;
+    color: var(--text-inverse) !important;
+    font-size: 0.65rem;
+    min-width: 20px;
+    padding: 0 6px;
+    height: 20px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
+    border: 2px solid var(--text-inverse);
+    line-height: 1;
+    white-space: nowrap;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0!important;
+    transform: translate(25%, -25%);
+    z-index: 1100;
+}
+
+@media(max-width:991px){
+    .cart-badge{
+        top: 9px !important;
+        right: 24px !important;
+    }
+}
+
+/* Bootstrap badge positioning fix for cart - IMPROVED VISIBILITY */
+.navbar .nav-link .badge {
+    background-color: var(--appetite-red) !important;
+    color: var(--text-inverse) !important;
+    font-size: 0.75rem !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-weight: 700 !important;
+    position: absolute !important;
+    top: -10px !important;
+    right: -10px !important;
+    transform: none !important;
+    z-index: 1000 !important;
+    border: 2px solid white !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+}
+
+/* Fix navbar height to accommodate badges properly */
+.navbar {
+    padding: 1rem 0 !important;
+    min-height: 80px !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Navbar item positioning to ensure badges show properly */
+.navbar-nav .nav-item {
+    position: relative !important;
+    margin: 0 0.5rem !important;
+    padding: 0.5rem 0 !important;
+}
+
+/* Location selector visibility fix */
+.location-dropdown .location-selector {
+    background-color: var(--golden-spice);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 6px rgba(255, 143, 0, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+/* Fix dropdown menu max-height to prevent vertical scroll in navbar */
+.location-dropdown-menu {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+}
+
+.dropdown-menu {
+    max-height: 350px !important;
+    overflow-y: auto !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 8px !important;
+}
+
+/* Ensure navbar doesn't expand beyond viewport */
+.navbar {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* CRITICAL: Fix dropdown positioning to appear OUTSIDE navbar */
+.navbar {
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 1000 !important;
+}
+
+.navbar .dropdown {
+    position: static !important;
+}
+
+.navbar .dropdown-menu {
+    position: fixed !important;
+    z-index: 2000 !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin-top: 0 !important;
+}
+
+/* Location dropdown positioning - OUTSIDE navbar */
+.location-dropdown {
+    position: static !important;
+}
+
+.location-dropdown .dropdown-menu {
+    position: fixed !important;
+    z-index: 2000 !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin-top: 0 !important;
+    min-width: 300px !important;
+}
+
+/* User dropdown positioning - OUTSIDE navbar */
+.navbar-nav .nav-item.dropdown {
+    position: static !important;
+}
+
+#userDropdown + .dropdown-menu,
+.dropdown-toggle + .dropdown-menu {
+    min-width: 250px !important;
+    max-width: 300px !important;
+    position: fixed !important;
+    z-index: 2000 !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin-top: 0 !important;
+}
+
+/* Ensure dropdowns don't get clipped */
+.navbar-collapse {
+    overflow: visible !important;
+}
+
+/* Fix for Bootstrap dropdown positioning conflicts */
+.dropdown-menu.show {
+    display: block !important;
+    position: absolute !important;
+}
+
+/* Prevent dropdown items from wrapping */
+.dropdown-item {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 8px 16px !important;
+}
+
+.dropdown-item i {
+    width: 16px !important;
+    text-align: center !important;
+}
+
+/* Cart Page Styling */
+.cart-page .quantity-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--appetite-red);
+    background-color: var(--bg-primary);
+    color: var(--appetite-red);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.cart-page .quantity-btn:hover:not(:disabled) {
+    background-color: var(--appetite-red);
+    color: var(--text-inverse);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+.cart-page .quantity-btn:disabled {
+    border-color: var(--border-light);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.cart-page .quantity-input {
+    width: 70px;
+    height: 36px;
+    border: 2px solid var(--golden-spice);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 700;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.cart-page .remove-btn {
+    background-color: var(--danger-color);
+    color: var(--text-inverse);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.cart-page .remove-btn:hover {
+    background-color: #D32F2F;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+/* Price Display */
+.price-display {
+    color: var(--appetite-red);
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+.discount-badge {
+    background-color: var(--success-color);
+    color: var(--text-inverse);
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Alerts */
+.alert-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--success-color);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+}
+
+.alert-danger {
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+    border-left: 4px solid var(--danger-color);
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: var(--warning-color);
+    color: #B8860B;
+    border-left: 4px solid var(--warning-color);
+}
+
+/* Footer */
+footer {
+    background-color: var(--bg-dark);
+    color: var(--text-inverse);
+    margin-top: auto;
+    padding: 3rem 0 2rem;
+    border-top: 4px solid var(--appetite-red);
+}
+
+footer .text-white-50 {
+    color: rgba(255, 255, 255, 0.7) !important;
+    transition: color 0.3s ease;
+}
+
+footer .text-white-50:hover {
+    color: var(--golden-spice) !important;
+    text-decoration: none !important;
+}
+
+/* Chat Widget */
+.chat-window {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background-color: var(--bg-primary);
+    border: 2px solid var(--appetite-red);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Hide global footer on mobile to declutter small screens */
+@media (max-width: 991.98px) {
+    footer,
+    .modern-footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+}
+
+.chat-header {
+    background-color: var(--appetite-red);
+    color: var(--text-inverse);
+    padding: 1rem;
+    border-radius: 10px 10px 0 0;
+    font-weight: 600;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    max-height: 300px;
+}
+
+.chat-message.user .message-bubble {
+    background-color: var(--appetite-red);
+    color: var(--text-inverse);
+    margin-left: auto;
+    border-radius: 18px 4px 18px 18px;
+    padding: 0.75rem 1rem;
+    max-width: 80%;
+}
+
+.chat-message.support .message-bubble {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-light);
+    border-radius: 4px 18px 18px 18px;
+    padding: 0.75rem 1rem;
+    max-width: 80%;
+}
+
+.chat-input {
+    padding: 1rem;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-light);
+    border-radius: 0 0 10px 10px;
+}
+
+.chat-input .btn {
+    background-color: var(--appetite-red);
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    margin-left: 0.5rem;
+}
+
+.chat-input .btn:hover {
+    background-color: var(--meat-burgundy);
+    transform: scale(1.05);
+}
+
+/* Utility Classes */
+.text-appetite-red {
+    color: var(--appetite-red) !important;
+}
+
+.text-fresh-orange {
+    color: var(--fresh-orange) !important;
+}
+
+.text-golden-spice {
+    color: var(--golden-spice) !important;
+}
+
+.bg-appetite-red {
+    background-color: var(--appetite-red) !important;
+    color: var(--text-inverse) !important;
+}
+
+.bg-fresh-orange {
+    background-color: var(--fresh-orange) !important;
+    color: var(--text-inverse) !important;
+}
+
+.bg-golden-spice {
+    background-color: var(--golden-spice) !important;
+    color: var(--text-primary) !important;
+}
+
+.border-appetite {
+    border-color: var(--appetite-red) !important;
+}
+
+.border-golden {
+    border-color: var(--golden-spice) !important;
+}
+
+/* Loading States */
+.loading {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--appetite-red);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.3rem;
+    }
+    
+    .chat-window {
+        width: calc(100% - 40px);
+        right: 20px;
+        bottom: 20px;
+    }
+    
+    .location-dropdown .location-selector {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Mobile navbar fixes */
+    .navbar {
+        padding: 0.5rem 0 !important;
+        min-height: 60px !important;
+    }
+    
+    /* Mobile dropdown positioning */
+    .navbar .dropdown-menu {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        transform: none !important;
+        margin: 0 15px !important;
+        max-width: calc(100vw - 30px) !important;
+    }
+    
+    /* Mobile cart badge */
+    .navbar .nav-link .badge {
+        top: -5px !important;
+        right: -5px !important;
+        font-size: 0.6rem !important;
+        min-width: 18px !important;
+        height: 18px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .location-dropdown-menu {
+        min-width: 280px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .navbar, .chat-window, footer {
+        display: none !important;
+    }
+    
+    .btn {
+        border: 1px solid var(--text-primary) !important;
+        background: transparent !important;
+        color: var(--text-primary) !important;
+    }
+}

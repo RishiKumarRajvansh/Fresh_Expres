@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Handover - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .handover-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .order-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .otp-input {
+        font-size: 2rem;
+        text-align: center;
+        letter-spacing: 0.5rem;
+        padding: 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .btn-handover {
+        background: #28a745;
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        width: 100%;
+        cursor: pointer;
+    }
+    
+    .btn-handover:hover {
+        background: #218838;
+    }
+    
+    .btn-handover:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+    
+    .status-assigned { background: #fff3cd; color: #856404; }
+    .status-accepted { background: #d4edda; color: #155724; }
+    
+    .alert {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 5px;
+    }
+    
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="handover-container">
+        <div class="text-center mb-4">
+            <h2>🚚 Order Handover</h2>
+            <p class="text-muted">Scan or enter the store handover code</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if order and assignment %}
+            <div class="order-info">
+                <h4>Order Details</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Order Number:</strong><br>
+                        <span class="text-primary">{{ order.order_number }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        <span class="status-badge status-{{ assignment.status }}">
+                            {{ assignment.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Store:</strong><br>
+                        {{ assignment.order.store.name }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total Amount:</strong><br>
+                        ₹{{ order.total_amount }}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <strong>Delivery Address:</strong><br>
+                        {{ order.delivery_address }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="handover-form">
+                <form id="handoverForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="handover_code"><strong>Store Handover Code:</strong></label>
+                        <input type="text" 
+                               id="handover_code" 
+                               name="handover_code"
+                               class="form-control otp-input" 
+                               placeholder="Enter 6-digit code"
+                               maxlength="6"
+                               pattern="[0-9]{6}"
+                               required>
+                        <small class="form-text text-muted">
+                            Ask the store manager for the handover code
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-handover" id="handoverBtn">
+                        <span id="btnText">🔄 Confirm Handover</span>
+                        <span id="btnSpinner" class="d-none">
+                            <i class="fa fa-spinner fa-spin"></i> Processing...
+                        </span>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <small class="text-muted">
+                    📱 You can also scan the QR code provided by the store
+                </small>
+            </div>
+            
+        {% else %}
+            <div class="alert alert-danger">
+                <h5>Error</h5>
+                <p>Unable to load order information. Please contact support.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- QR Code Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📷 Scan QR Code</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="qr-reader" style="width: 100%;"></div>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QR Code Scanner -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Auto-format OTP input
+    $('#handover_code').on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    // Handle form submission
+    $('#handoverForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const handoverCode = $('#handover_code').val();
+        if (handoverCode.length !== 6) {
+            alert('Please enter a valid 6-digit code');
+            return;
+        }
+        
+        // Disable button and show spinner
+        $('#handoverBtn').prop('disabled', true);
+        $('#btnText').addClass('d-none');
+        $('#btnSpinner').removeClass('d-none');
+        
+        // Submit via AJAX
+        $.ajax({
+            url: "{% url 'delivery:handover_order' order.order_number %}",
+            method: 'POST',
+            data: {
+                'handover_code': handoverCode,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success and redirect
+                    alert('✅ ' + response.message);
+                    window.location.href = "{% url 'delivery:agent_dashboard' %}";
+                } else {
+                    alert('❌ ' + response.message);
+                    // Reset button
+                    $('#handoverBtn').prop('disabled', false);
+                    $('#btnText').removeClass('d-none');
+                    $('#btnSpinner').addClass('d-none');
+                }
+            },
+            error: function() {
+                alert('Network error. Please try again.');
+                // Reset button
+                $('#handoverBtn').prop('disabled', false);
+                $('#btnText').removeClass('d-none');
+                $('#btnSpinner').addClass('d-none');
+            }
+        });
+    });
+    
+    // QR Code Scanner (optional future feature)
+    let qrScanner = null;
+    
+    $('#scanQRBtn').on('click', function() {
+        $('#qrScannerModal').modal('show');
+        startQRScanner();
+    });
+    
+    $('#qrScannerModal').on('hidden.bs.modal', function() {
+        if (qrScanner) {
+            qrScanner.stop();
+        }
+    });
+    
+    function startQRScanner() {
+        qrScanner = new Html5Qrcode("qr-reader");
+        qrScanner.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            (decodedText) => {
+                $('#handover_code').val(decodedText);
+                $('#qrScannerModal').modal('hide');
+                qrScanner.stop();
+            },
+            (error) => {
+                // Ignore scanning errors
+            }
+        ).catch(err => {
+            console.log("QR Scanner error:", err);
+        });
+    }
+});
+</script>
+{% endblock %}

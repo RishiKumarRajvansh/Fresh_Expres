@@ -1,0 +1,227 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Edit Product - {{ store.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-preview {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .image-preview img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+    }
+    .delete-image-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .main-image-badge {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: #28a745;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block store_content %}
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0">
+            <i class="fas fa-edit me-2"></i>Edit Product
+        </h2>
+        <a href="{% url 'stores:inventory_management' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Inventory
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ store_product.product.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Product Info -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Product Name</label>
+                                    <input type="text" class="form-control" value="{{ store_product.product.name }}" readonly>
+                                    <small class="form-text text-muted">Product name cannot be changed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <input type="text" class="form-control" value="{{ store_product.product.category.name }}" readonly>
+                                    <small class="form-text text-muted">Category cannot be changed</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ store_product.product.description }}</textarea>
+                        </div>
+
+                        <!-- Images Section -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Product Images</h6>
+                            
+                            <!-- Current Images -->
+                            <div class="mb-3">
+                                <label class="form-label">Current Images</label>
+                                <div class="current-images">
+                                    {% if store_product.product.image %}
+                                    <div class="image-preview">
+                                        <img src="{{ store_product.product.image.url }}" alt="Main Image">
+                                        <div class="main-image-badge">Main</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% for img in store_product.product.images.all %}
+                                    <div class="image-preview">
+                                        <img src="{{ img.image.url }}" alt="Additional Image">
+                                        <button type="button" class="delete-image-btn" onclick="markForDeletion({{ img.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if not store_product.product.image and not store_product.product.images.all %}
+                                <p class="text-muted">No images uploaded</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Upload New Images -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="main_image" class="form-label">Update Main Image</label>
+                                        <input type="file" class="form-control" id="main_image" name="main_image" accept="image/*">
+                                        <small class="form-text text-muted">Leave empty to keep current main image</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="additional_images" class="form-label">Add More Images</label>
+                                        <input type="file" class="form-control" id="additional_images" name="additional_images" accept="image/*" multiple>
+                                        <small class="form-text text-muted">You can upload up to {{ store_product.product.images.count|add:"4" }} total images</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden field for images to delete -->
+                            <input type="hidden" id="delete_images" name="delete_images" value="">
+                        </div>
+
+                        <!-- Pricing and Stock -->
+                        <div class="row">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="price" class="form-label">Price (₹) *</label>
+                                    <input type="number" class="form-control" id="price" name="price" step="0.01" value="{{ store_product.price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="stock_quantity" class="form-label">Stock Quantity *</label>
+                                    <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="{{ store_product.stock_quantity }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="discount_percentage" class="form-label">Discount (%)</label>
+                                    <input type="number" class="form-control" id="discount_percentage" name="discount_percentage" min="0" max="100" value="{{ store_product.discount_percentage|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_available" name="is_available" 
+                                           {% if store_product.is_available %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_available">
+                                        Available for Sale
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_featured" name="is_featured" 
+                                           {% if store_product.is_featured %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_featured">
+                                        Featured Product
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save Changes
+                            </button>
+                            <a href="{% url 'stores:inventory_management' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let imagesToDelete = [];
+
+function markForDeletion(imageId) {
+    if (confirm('Are you sure you want to delete this image?')) {
+        // Add to deletion list
+        imagesToDelete.push(imageId);
+        document.getElementById('delete_images').value = imagesToDelete.join(',');
+        
+        // Hide the image preview
+        event.target.closest('.image-preview').style.display = 'none';
+    }
+}
+
+// File input validation
+document.getElementById('additional_images').addEventListener('change', function(e) {
+    const maxImages = 4;
+    const currentImages = {{ store_product.product.images.count }};
+    const selectedFiles = e.target.files.length;
+    
+    if (currentImages + selectedFiles > maxImages) {
+        alert(`You can only add ${maxImages - currentImages} more images. Current: ${currentImages}, Trying to add: ${selectedFiles}`);
+        e.target.value = '';
+    }
+});
+</script>
+{% endblock %}

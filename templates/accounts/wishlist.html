@@ -1,0 +1,430 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}My Wishlist | Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wishlist-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .wishlist-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .wishlist-header h1 {
+        color: #2c3e50;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .wishlist-header p {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .wishlist-count {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+
+    .empty-wishlist {
+        text-align: center;
+        padding: 4rem 2rem;
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .empty-wishlist .empty-icon {
+        font-size: 4rem;
+        color: #e74c3c;
+        margin-bottom: 1rem;
+    }
+
+    .empty-wishlist h3 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .empty-wishlist p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+        max-width: 400px;
+    }
+
+    .btn-browse {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-browse:hover {
+        background: linear-gradient(135deg, #c0392b, #a93226);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+
+    .product-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .product-image-container {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 3rem;
+    }
+
+    .wishlist-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: #e74c3c;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .wishlist-btn:hover {
+        background: white;
+        transform: scale(1.1);
+    }
+
+    .product-info {
+        padding: 1.5rem;
+    }
+
+    .product-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .product-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .product-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e74c3c;
+        margin-bottom: 1rem;
+    }
+
+    .btn-add-to-cart {
+        background: linear-gradient(135deg, #27ae60, #219a52);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .btn-add-to-cart:hover {
+        background: linear-gradient(135deg, #219a52, #1e8449);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .wishlist-header h1 {
+            font-size: 2rem;
+        }
+        
+        .empty-wishlist {
+            padding: 2rem 1rem;
+        }
+        
+        .empty-wishlist .empty-icon {
+            font-size: 3rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wishlist-container">
+    <div class="wishlist-header">
+        <h1>
+            <i class="fas fa-heart" style="color: #e74c3c;"></i>
+            My Wishlist
+            {% if wishlist_items %}
+                <span class="wishlist-count">{{ wishlist_items|length }}</span>
+            {% endif %}
+        </h1>
+        <p>Your favorite products saved for later</p>
+    </div>
+
+    {% if wishlist_items %}
+        <div class="row">
+            {% for item in wishlist_items %}
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-card" data-product-id="{{ item.store_product.product.id }}">
+                        <div class="product-image-container">
+                            {% if item.store_product.product.images.first %}
+                                <img src="{{ item.store_product.product.images.first.image.url }}" alt="{{ item.store_product.product.name }}" class="product-image">
+                            {% else %}
+                                <div class="product-image-placeholder">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Wishlist Heart - Always filled since it's in wishlist -->
+                            <button class="wishlist-btn" data-wishlist-bound="1" onclick="toggleWishlist({{ item.store_product.id }}, this)">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="product-info">
+                            <h3 class="product-name">{{ item.store_product.product.name }}</h3>
+                            <p class="product-description">{{ item.store_product.product.description|truncatechars:80 }}</p>
+                            
+                            <div class="product-price">
+                                {% if item.store_product.discount_price %}
+                                    ₹{{ item.store_product.discount_price }}
+                                    <small class="text-muted text-decoration-line-through">₹{{ item.store_product.price }}</small>
+                                {% else %}
+                                    ₹{{ item.store_product.price }}
+                                {% endif %}
+                            </div>
+                            
+                            <button class="btn-add-to-cart" onclick="addToCart({{ item.store_product.id }})">
+                                <i class="fas fa-shopping-cart me-2"></i>
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-danger" onclick="clearWishlist()">
+                <i class="fas fa-trash-alt me-2"></i>
+                Clear All Items
+            </button>
+        </div>
+    {% else %}
+        <div class="empty-wishlist">
+            <div class="empty-icon">
+                <i class="far fa-heart"></i>
+            </div>
+            <h3>Your wishlist is empty</h3>
+            <p>Discover and save your favorite meat and seafood products to build your perfect shopping list</p>
+            <a href="{% url 'catalog:product_list' %}" class="btn-browse">
+                <i class="fas fa-fish"></i>
+                Browse Products
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Debounce mechanism to prevent rapid clicks - per element
+const togglingElements = new Set();
+
+function toggleWishlist(storeProductId, element) {
+    // Prevent multiple rapid clicks on the same element
+    if (togglingElements.has(element)) {
+        return;
+    }
+    
+    togglingElements.add(element);
+    element.disabled = true;
+    
+    // Add visual feedback
+    const originalContent = element.innerHTML;
+    element.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    console.debug('wishlist.toggleWishlist: sending POST', {store_product_id: storeProductId});
+    fetch('/accounts/wishlist/toggle/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': (document.cookie.match(new RegExp('(^| )csrftoken=([^;]+)')) || [])[2],
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            'store_product_id': storeProductId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (!data.added) {
+                // Item was removed from wishlist
+                const productCard = element.closest('.col-lg-4');
+                if (productCard) {
+                    productCard.remove();
+                    
+                    // Update navbar counters
+                    if (window.updateNavbarCounts) {
+                        window.updateNavbarCounts(data);
+                    }
+                    
+                    // Check if wishlist is now empty
+                    const remainingCards = document.querySelectorAll('.product-card').length;
+                    if (remainingCards === 0) {
+                        location.reload(); // Reload to show empty state
+                    } else {
+                        // Update count in header
+                        const countElement = document.querySelector('.wishlist-count');
+                        if (countElement) {
+                            countElement.textContent = remainingCards;
+                        }
+                    }
+                }
+            }
+        } else {
+            console.error('Error updating wishlist:', data.message);
+            // Restore original content on error
+            element.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Restore original content on error
+        element.innerHTML = originalContent;
+    })
+    .finally(() => {
+        togglingElements.delete(element);
+        element.disabled = false;
+        // Only restore content if it wasn't already removed
+        if (document.body.contains(element) && element.innerHTML.includes('fa-spinner')) {
+            element.innerHTML = originalContent;
+        }
+    });
+}
+
+function addToCart(productId) {
+    console.debug('wishlist.addToCart: sending POST', { store_product_id: productId });
+
+    // Find the button associated with this product card
+    const button = document.querySelector(`.product-card[data-product-id='${productId}'] .btn-add-to-cart`);
+    const originalText = button ? button.innerHTML : null;
+
+    fetch('/orders/cart/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': (document.cookie.match(new RegExp('(^| )csrftoken=([^;]+)')) || [])[2],
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            store_product_id: productId,
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (button) {
+                button.innerHTML = '<i class="fas fa-check me-2"></i>Added!';
+                button.style.background = '#27ae60';
+
+                setTimeout(() => {
+                    if (button) {
+                        button.innerHTML = originalText;
+                        button.style.background = '';
+                    }
+                }, 2000);
+            }
+        } else {
+            console.error('Error adding to cart:', data.message);
+            if (button && originalText !== null) button.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (button && originalText !== null) button.innerHTML = originalText;
+    });
+}
+
+function clearWishlist() {
+    if (confirm('Are you sure you want to remove all items from your wishlist?')) {
+        fetch('/accounts/wishlist/clear/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update navbar counters using global function
+                if (window.updateNavbarCounts) {
+                    window.updateNavbarCounts(data);
+                }
+                // Refresh page to show empty wishlist
+                location.reload();
+            } else {
+                console.error('Error clearing wishlist:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+</script>
+{% endblock %}

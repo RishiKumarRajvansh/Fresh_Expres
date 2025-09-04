@@ -1,0 +1,350 @@
+{% extends "base_mobile.html" %}
+{% load static %}
+
+{% block title %}Delivery Agent Registration - Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+    .registration-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-control {
+        border: 2px solid #e8f4fd;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .btn-register {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-register:hover {
+        background: linear-gradient(135deg, #0056b3, #004494);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        border-bottom: 2px solid #e8f4fd;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field {
+        color: #dc3545;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e8f4fd;
+    }
+    
+    .login-link a {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="registration-container">
+        <div class="text-center mb-4">
+            <h2 class="text-primary">Join as Delivery Agent</h2>
+            <p class="text-muted">Register to deliver fresh products to customers</p>
+        </div>
+
+        <!-- Error Message Display -->
+        {% if error_message %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" style="background-color: #fef3c7; border-color: #f59e0b; color: #92400e; margin-bottom: 1.5rem; border-radius: 12px;">
+            <i class="fas fa-exclamation-triangle"></i> {{ error_message }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Personal Information -->
+            <div class="section-title">
+                <i class="fas fa-user me-2"></i>Personal Information
+            </div>
+            
+            <div class="row">
+                <div class="col-12 form-group">
+                    <label for="full_name" class="form-label">
+                        Full Name <span class="required-field">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                           placeholder="Enter your full name" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="email" class="form-label">
+                        Email Address <span class="required-field">*</span>
+                    </label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           placeholder="Enter email address" 
+                           {% if suggested_email %}value="{{ suggested_email }}"{% endif %} required>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="phone_number" class="form-label">
+                        Phone Number <span class="required-field">*</span>
+                    </label>
+                    <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                           placeholder="Enter contact number" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="emergency_contact" class="form-label">Emergency Contact</label>
+                <input type="tel" class="form-control" id="emergency_contact" name="emergency_contact" 
+                       placeholder="Emergency contact number">
+            </div>
+            
+            <!-- Address Information -->
+            <div class="section-title mt-4">
+                <i class="fas fa-map-marker-alt me-2"></i>Address Information
+            </div>
+            
+            <div class="form-group">
+                <label for="address" class="form-label">
+                    Complete Address <span class="required-field">*</span>
+                </label>
+                <input type="text" class="form-control" id="address" name="address" 
+                       placeholder="Enter complete address" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="city" class="form-label">
+                        City <span class="required-field">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="city" name="city" 
+                           placeholder="Enter city" required>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="zip_code" class="form-label">
+                        ZIP/Postal Code <span class="required-field">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="zip_code" name="zip_code" 
+                           placeholder="Enter ZIP code" required>
+                </div>
+            </div>
+            
+            <!-- Vehicle Information -->
+            <div class="section-title mt-4">
+                <i class="fas fa-motorcycle me-2"></i>Vehicle Information
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="vehicle_type" class="form-label">
+                        Vehicle Type <span class="required-field">*</span>
+                    </label>
+                    <select class="form-control" id="vehicle_type" name="vehicle_type" required>
+                        <option value="">Select vehicle type</option>
+                        <option value="bicycle">Bicycle</option>
+                        <option value="scooter">Scooter</option>
+                        <option value="motorcycle">Motorcycle</option>
+                        <option value="car">Car</option>
+                    </select>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="vehicle_number" class="form-label">
+                        Vehicle Registration Number <span class="required-field" id="vehicle_number_required">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" 
+                           placeholder="Enter vehicle number">
+                    <small class="text-muted" id="vehicle_number_note" style="display: none;">
+                        Not required for bicycles
+                    </small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="license_number" class="form-label">
+                        Driving License Number <span class="required-field" id="license_required">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="license_number" name="license_number" 
+                           placeholder="Enter license number">
+                    <small class="text-muted" id="license_note" style="display: none;">
+                        Not required for bicycles
+                    </small>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="experience_years" class="form-label">Years of Experience</label>
+                    <input type="number" class="form-control" id="experience_years" name="experience_years" 
+                           placeholder="Years of delivery experience" min="0" max="50">
+                </div>
+            </div>
+            
+            <!-- Account Security -->
+            <div class="section-title mt-4">
+                <i class="fas fa-lock me-2"></i>Account Security
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="password" class="form-label">
+                        Password <span class="required-field">*</span>
+                    </label>
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="Enter password" required minlength="8">
+                    <small class="form-text text-muted">Password must be at least 8 characters long</small>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="confirm_password" class="form-label">
+                        Confirm Password <span class="required-field">*</span>
+                    </label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                           placeholder="Confirm password" required minlength="8">
+                </div>
+            </div>
+            
+            <!-- Terms and Conditions -->
+            <div class="form-group mt-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                    <label class="form-check-label" for="terms">
+                        I agree to the <a href="#" target="_blank">Terms and Conditions</a> 
+                        and <a href="#" target="_blank">Privacy Policy</a> 
+                        <span class="required-field">*</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-register mt-3">
+                <i class="fas fa-paper-plane me-2"></i>Submit Application
+            </button>
+        </form>
+        
+        <!-- Login Link -->
+        <div class="login-link">
+            <p>Already have an account? <a href="{% url 'accounts:email_login' %}">Login here</a></p>
+            <p><a href="{% url 'core:home' %}">← Back to Home</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Vehicle type change handler
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+    const vehicleNumberInput = document.getElementById('vehicle_number');
+    const licenseNumberInput = document.getElementById('license_number');
+    const vehicleNumberRequired = document.getElementById('vehicle_number_required');
+    const licenseRequired = document.getElementById('license_required');
+    const vehicleNumberNote = document.getElementById('vehicle_number_note');
+    const licenseNote = document.getElementById('license_note');
+    
+    if (vehicleTypeSelect) {
+        vehicleTypeSelect.addEventListener('change', function(e) {
+            const isBicycle = e.target.value === 'bicycle';
+            
+            if (isBicycle) {
+                // For bicycles, make fields optional
+                vehicleNumberInput.removeAttribute('required');
+                licenseNumberInput.removeAttribute('required');
+                vehicleNumberRequired.style.display = 'none';
+                licenseRequired.style.display = 'none';
+                vehicleNumberNote.style.display = 'block';
+                licenseNote.style.display = 'block';
+                vehicleNumberInput.placeholder = 'Not required for bicycles';
+                licenseNumberInput.placeholder = 'Not required for bicycles';
+            } else {
+                // For other vehicles, make fields required
+                vehicleNumberInput.setAttribute('required', 'required');
+                licenseNumberInput.setAttribute('required', 'required');
+                vehicleNumberRequired.style.display = 'inline';
+                licenseRequired.style.display = 'inline';
+                vehicleNumberNote.style.display = 'none';
+                licenseNote.style.display = 'none';
+                vehicleNumberInput.placeholder = 'Enter vehicle number';
+                licenseNumberInput.placeholder = 'Enter license number';
+            }
+        });
+    }
+    
+    // Phone number formatting
+    const phoneInputs = document.querySelectorAll('input[type="tel"]');
+    phoneInputs.forEach(function(input) {
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            e.target.value = value;
+        });
+    });
+    
+    // Vehicle number formatting
+    const vehicleInput = document.getElementById('vehicle_number');
+    if (vehicleInput) {
+        vehicleInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+    
+    // License number formatting
+    const licenseInput = document.getElementById('license_number');
+    if (licenseInput) {
+        licenseInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

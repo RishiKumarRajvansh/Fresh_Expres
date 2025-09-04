@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fresh Express Delivery{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS - Food Psychology Theme -->
+    {% load static %}
+    <link href="{% static 'css/appetite-theme.css' %}" rel="stylesheet">
+    <link href="{% static 'css/common.css' %}" rel="stylesheet">
+    <link href="{% static 'css/global-product-card.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container" >
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'core:home' %}">
+                <i class="fas fa-fish me-2"></i>Fresh Express
+            </a>
+            
+            <!-- ZIP Code Display: visible to anonymous users and customers only (hide for store owners/staff and delivery agents) -->
+            {% if not user.is_authenticated or is_customer %}
+                {% if selected_zip_code %}
+                <div class="d-flex align-items-center me-3">
+                    <i class="fas fa-map-marker-alt text-muted me-1"></i>
+                    <small class="text-muted">{{ selected_zip_code }}</small>
+                    <a href="{% url 'core:change_zip' %}" class="btn btn-sm btn-outline-primary ms-2">Change</a>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center me-3">
+                    <a href="{% url 'core:zip_capture' %}" class="btn btn-sm btn-outline-primary">Select ZIP Code</a>
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- Navbar items removed - navigation is handled through search and user dashboard -->
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <!-- Cart - Only for customers -->
+                    {% if user.is_authenticated and user.user_type == 'customer' %}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{% url 'orders:cart' %}">
+                            <i class="fas fa-shopping-cart"></i>
+                            {% if total_cart_items > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ total_cart_items }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% elif not user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{% url 'orders:cart' %}">
+                            <i class="fas fa-shopping-cart"></i>
+                            {% if total_cart_items > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ total_cart_items }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- User Menu -->
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                            {% if user.user_type == 'customer' %}
+                            <li><a class="dropdown-item" href="{% url 'core:customer_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Customer Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>My Orders
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:address_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Addresses
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'payments:payment_methods' %}">
+                                <i class="fas fa-credit-card me-2"></i>Payment Methods
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:wishlist' %}">
+                                <i class="fas fa-heart me-2"></i>My Wishlist
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:cart' %}">
+                                <i class="fas fa-shopping-cart me-2"></i>My Cart
+                            </a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="{% url 'core:dashboard_router' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>My Orders
+                            </a></li>
+                            {% endif %}
+                            
+                            {% if user.user_type == 'customer' %}
+                            <li><a class="dropdown-item" href="{% url 'accounts:loyalty_dashboard' %}">
+                                <i class="fas fa-star me-2"></i>Loyalty & Rewards
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'chat:chat_list' %}">
+                                <i class="fas fa-headset me-2"></i>Support & Help
+                            </a></li>
+                            {% endif %}
+                            
+            {% if user.user_type == 'store_owner' %}
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Store Management</h6></li>
+            <li><a class="dropdown-item" href="{% url 'stores:dashboard' %}">
+                <i class="fas fa-store me-2"></i>Store Dashboard
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'stores:orders' %}">
+                <i class="fas fa-list-alt me-2"></i>Manage Orders
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'stores:inventory_management' %}">
+                <i class="fas fa-boxes me-2"></i>Inventory
+            </a></li>
+            {% elif user.user_type == 'store_owner' %}
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Staff Menu</h6></li>
+            <li><a class="dropdown-item" href="{% url 'stores:staff_dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Staff Dashboard
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'stores:staff_orders' %}">
+                <i class="fas fa-tasks me-2"></i>My Assigned Orders
+            </a></li>
+            {% endif %}                            {% if user.user_type == 'delivery_agent' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Delivery</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'delivery:agent_profile_new' %}">
+                                <i class="fas fa-user-circle me-2"></i>Agent Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'delivery:agent_dashboard' %}">
+                                <i class="fas fa-motorcycle me-2"></i>Delivery Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'delivery:earnings' %}">
+                                <i class="fas fa-rupee-sign me-2"></i>Earnings
+                            </a></li>
+                            {% endif %}
+                            
+                            {% if user.is_staff or user.user_type == 'admin' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Administration</h6></li>
+                            <li><a class="dropdown-item" href="/admin/">
+                                <i class="fas fa-cogs me-2"></i>Admin Panel
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:admin_dashboard' %}">
+                                <i class="fas fa-chart-line me-2"></i>Admin Dashboard
+                            </a></li>
+                            {% endif %}
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                {% comment %} Robust logout form: mark with data-logout and a data-redirect attribute so client JS can POST and redirect reliably {% endcomment %}
+                                <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;" data-logout="true"
+                                    data-redirect="{% if user.user_type == 'delivery_agent' %}{% url 'accounts:email_login' %}?type=delivery{% elif user.user_type == 'store_owner' %}{% url 'accounts:email_login' %}?type=store{% else %}{% url 'core:home' %}{% endif %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:customer_login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm" href="{% url 'accounts:customer_register' %}">Register</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Fresh Express</h5>
+                    <p class="small text-muted">Fresh Express delivered to your door.</p>
+                </div>
+                <div class="col-md-2">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'core:about' %}" class="text-light">About Us</a></li>
+                        <li><a href="{% url 'core:contact' %}" class="text-light">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6>Support</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'chat:chat_list' %}" class="text-light">Help Center</a></li>
+                        <li><a href="{% url 'core:terms' %}" class="text-light">Terms</a></li>
+                        <li><a href="{% url 'core:privacy' %}" class="text-light">Privacy</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>Contact Info</h6>
+                    <p class="small">
+                        <i class="fas fa-phone me-2"></i>+91 123 456 7890<br>
+                        <i class="fas fa-envelope me-2"></i>support@freshexpress.com
+                    </p>
+                </div>
+            </div>
+            <hr class="mt-4">
+            <div class="text-center">
+                <small>&copy; 2025 Fresh Express. All rights reserved.</small>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Chat Widget -->
+    {% if user.is_authenticated and user.user_type == 'customer' %}
+    <div id="chat-widget" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+        <button class="btn btn-primary rounded-circle" id="chat-toggle" style="width: 60px; height: 60px;">
+            <i class="fas fa-comments"></i>
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% load static %}{% static 'js/main.js' %}"></script>
+    
+    <script>
+    // Robust logout handler: intercept forms with data-logout and POST via fetch with CSRF header
+    (function(){
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const logoutForms = document.querySelectorAll('form[data-logout]');
+            logoutForms.forEach(form => {
+                const handler = function(e){
+                    e.preventDefault();
+                    const url = form.getAttribute('action') || window.location.href;
+                    const redirect = form.getAttribute('data-redirect') || '/';
+                    const csrftoken = getCookie('csrftoken');
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    }).then(resp => {
+                        // On any response, redirect to the intended page to avoid stuck UI
+                        window.location.href = redirect;
+                    }).catch(err => {
+                        console.error('Logout fetch failed', err);
+                        // show GET fallback link (in case form submission is blocked)
+                        const fallback = document.getElementById('logout-get-fallback');
+                        if (fallback) {
+                            fallback.classList.remove('d-none');
+                            fallback.click();
+                            return;
+                        }
+                        // fallback to native form submit
+                        form.removeEventListener('submit', handler);
+                        form.submit();
+                    });
+                };
+
+                form.addEventListener('submit', handler);
+            });
+        });
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

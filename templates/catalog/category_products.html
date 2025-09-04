@@ -1,0 +1,31 @@
+{% extends 'catalog/product_list.html' %}
+
+{% block title %}
+    {% if category %}{{ category.name }}{% else %}Products{% endif %} - Fresh Express
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Category Header -->
+    {% if category %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center mt-2">
+                {% if category.icon %}
+                <i class="{{ category.icon }} fa-2x text-success me-3"></i>
+                {% endif %}
+                <div>
+                    <h2 class="mb-1">{{ category.name }}</h2>
+                    {% if category.description %}
+                    <p class="text-muted mb-0">{{ category.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Continue with the rest of the product list template -->
+    {{ block.super }}
+</div>
+{% endblock %}

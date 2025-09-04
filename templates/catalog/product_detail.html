@@ -1,0 +1,345 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container py-0">
+    <div class="row">
+        <div class="col-12">
+            <!-- Product Image -->
+            <div class="product-image-container position-relative">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" 
+                         alt="{{ product.name }}"
+                         class="w-100" style="height: 300px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 300px;">
+                        <i class="fas fa-image text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Back Button -->
+                <button class="btn btn-light position-absolute top-0 start-0 m-3" 
+                        onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                
+                <!-- Share Button -->
+                <button class="btn btn-light position-absolute top-0 end-0 m-3" 
+                        onclick="shareProduct()">
+                    <i class="fas fa-share"></i>
+                </button>
+            </div>
+            
+            <!-- Product Info -->
+            <div class="px-3 py-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h1 class="h3 mb-0">{{ product.name }}</h1>
+                    {% if is_available %}
+                        <span class="badge bg-success">Available</span>
+                    {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                    {% endif %}
+                </div>
+                <!-- Wishlist button (binds to central WishlistModule) -->
+                {% if user.is_authenticated and is_customer %}
+                    {% if store_product %}
+                        <button class="btn btn-link p-0 ms-2 wishlist-btn" data-store-product-id="{{ store_product.id }}">
+                            <i class="far fa-heart fa-lg"></i>
+                        </button>
+                    {% elif product_options|length > 0 %}
+                        <button class="btn btn-link p-0 ms-2 wishlist-btn" data-store-product-id="{{ product_options.0.id }}">
+                            <i class="far fa-heart fa-lg"></i>
+                        </button>
+                    {% endif %}
+                {% endif %}
+                
+                <p class="text-muted mb-2">{{ product.category.name }} • {{ product.weight_per_unit }}g</p>
+                
+                <!-- Price -->
+                <div class="price-section mb-3">
+                    {% if store_product %}
+                        <h3 class="price mb-0">₹{{ store_product.price }}</h3>
+                        <small class="text-muted">₹{{ store_product.price_per_kg }}/kg</small>
+                    {% elif min_price %}
+                        <h3 class="price mb-0">₹{{ min_price }}</h3>
+                        <small class="text-muted">Price starting from</small>
+                    {% else %}
+                        <p class="text-muted">Select a store to see pricing</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Store Selection -->
+                {% if available_stores|length > 1 %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-store me-2"></i>Available at {{ available_stores|length }} stores
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for store_prod in available_stores %}
+                        <div class="store-option p-3 border-bottom {% if store_prod.id == store_product.id %}bg-light{% endif %}" 
+                             onclick="selectStore({{ store_prod.store.id }})">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ store_prod.store.name }}</h6>
+                                    <small class="text-muted">{{ store_prod.store.address }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="price">₹{{ store_prod.price }}</div>
+                                    <small class="text-muted">₹{{ store_prod.price_per_kg }}/kg</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Product Description -->
+                {% if product.description %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Description
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ product.description }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Product Details -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Product Details
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Weight:</strong><br>
+                                <span class="text-muted">{{ product.weight_per_unit }}g</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Category:</strong><br>
+                                <span class="text-muted">{{ product.category.name }}</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Freshness:</strong><br>
+                                <span class="text-success">Fresh Daily</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Storage:</strong><br>
+                                <span class="text-muted">Keep Refrigerated</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Related Products -->
+                {% if related_products %}
+                <div class="mb-3">
+                    <h6 class="mb-3">
+                        <i class="fas fa-tags me-2"></i>Similar Products
+                    </h6>
+                    <div class="row g-2">
+                        {% for related in related_products|slice:":4" %}
+                        <div class="col-6">
+                            <div class="card h-100">
+                                <div class="position-relative">
+                                    {% if related.image %}
+                                        <img src="{{ related.image.url }}" 
+                                             class="card-img-top" style="height: 120px; object-fit: cover;"
+                                             alt="{{ related.name }}">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center" 
+                                             style="height: 120px;">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body p-2">
+                                    <h6 class="card-title small mb-1">{{ related.name|truncatechars:25 }}</h6>
+                                    <p class="text-muted small mb-1">{{ related.weight_per_unit }}g</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="price small">₹{{ related.get_min_price }}</span>
+                                        <a href="{% url 'catalog:product_detail' related.product.slug %}" 
+                                           class="btn btn-sm btn-outline-primary">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Add to Cart Section (Fixed at bottom) -->
+                {% if is_available and store_product %}
+                <div class="fixed-bottom bg-white border-top p-3">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-6">
+                                <div class="price h4 mb-0">₹{{ store_product.price }}</div>
+                                <small class="text-muted">{{ product.weight_per_unit }}g</small>
+                            </div>
+                            <div class="col-6">
+                                <!-- Check if item is already in cart -->
+                                {% if cart_item %}
+                                <div class="d-flex justify-content-end align-items-center">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="updateCartQuantity({{ cart_item.id }}, {{ cart_item.quantity|add:'-1' }})">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <span class="btn btn-primary disabled">{{ cart_item.quantity }}</span>
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="updateCartQuantity({{ cart_item.id }}, {{ cart_item.quantity|add:'1' }})">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" onclick="addToCart({{ store_product.id }})">
+                                        <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif is_available and product_options|length > 0 %}
+                <!-- When product available in some stores but no specific store selected, allow add-to-cart using cheapest option -->
+                <div class="fixed-bottom bg-white border-top p-3">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-6">
+                                <div class="price h4 mb-0">₹{{ min_price }}</div>
+                                <small class="text-muted">{{ product.weight_per_unit }}g</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" onclick="addToCart({{ product_options.0.id }})">
+                                        <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add padding to prevent content from being hidden behind fixed button -->
+                <div style="height: 80px;"></div>
+                {% else %}
+                <div class="text-center py-4">
+                    {% if not product.is_available %}
+                        <p class="text-muted mb-3">This product is currently out of stock</p>
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-bell me-2"></i>Notify when Available
+                        </button>
+                    {% else %}
+                        <p class="text-muted mb-3">Please select a store to add to cart</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectStore(storeId) {
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('store', storeId);
+    window.location.href = currentUrl.toString();
+}
+
+async function addToCart(storeProductId) {
+    try {
+        console.debug('detail.addToCart: sending POST', { store_product_id: storeProductId });
+        const response = await fetch('/orders/cart/add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : (document.cookie.match(new RegExp('(^| )csrftoken=([^;]+)')) || [])[2]
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                store_product_id: storeProductId,
+                quantity: 1
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateCartCount(data.cart_count);
+            // Refresh page to show quantity controls
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            console.error('Error adding to cart:', data.message || data);
+            alert(data.message || 'Could not add to cart.');
+        }
+    } catch (error) {
+        console.error('Error in addToCart:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function updateCartQuantity(cartItemId, newQuantity) {
+    try {
+        const response = await fetch('/orders/cart/update/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                cart_item_id: cartItemId,
+                quantity: newQuantity
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateCartCount(data.cart_count);
+            // Refresh page to update quantity display
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            console.error('Error updating cart quantity:', data.message || data);
+            alert(data.message || 'Could not update cart.');
+        }
+    } catch (error) {
+        console.error('Error in updateCartQuantity:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+function shareProduct() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ product.name }}',
+            text: '{{ product.description|default:"Check out this fresh product!" }}',
+            url: window.location.href
+        });
+    } else {
+        // Fallback - copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+        });
+    }
+}
+</script>
+
+{% endblock %}

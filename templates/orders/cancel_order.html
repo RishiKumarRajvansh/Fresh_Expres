@@ -1,0 +1,173 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Cancel Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                </a>
+            </div>
+
+            <!-- Cancel Order Form -->
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-1"><i class="fas fa-times-circle me-2"></i>Cancel Order</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Order Information -->
+
+                    {% if order.status == 'delivered' %}
+                    <!-- Cannot Cancel Delivered Order -->
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                            <i class="fas fa-envelope me-2"></i>Contact Support
+                        </a>
+                    </div>
+
+                    {% elif order.status == 'cancelled' %}
+                    <!-- Already Cancelled -->
+
+                    {% elif order.status == 'preparing' or order.status == 'packed' or order.status == 'out_for_delivery' %}
+                    <!-- Cannot Cancel - Being Processed -->
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                            <i class="fas fa-phone me-2"></i>Contact Support
+                        </a>
+                    </div>
+
+                    {% elif order.status == 'confirmed' and not user.is_staff %}
+                    <!-- Cannot Cancel - Confirmed by Store -->
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                            <i class="fas fa-phone me-2"></i>Contact Support
+                        </a>
+                    </div>
+
+                    {% else %}
+                    <!-- Cancellation Form -->
+                    <form method="post" id="cancelOrderForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="reason" class="form-label"><strong>Reason for Cancellation:</strong></label>
+                            <select name="reason" id="reason" class="form-select" required>
+                                <option value="">Select a reason</option>
+                                <option value="changed_mind">Changed my mind</option>
+                                <option value="wrong_item">Ordered wrong item</option>
+                                <option value="address_issue">Address/delivery issue</option>
+                                <option value="payment_issue">Payment issue</option>
+                                <option value="long_wait">Taking too long</option>
+                                <option value="price_issue">Price concern</option>
+                                <option value="other">Other reason</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="otherReasonDiv" style="display: none;">
+                            <label for="other_reason" class="form-label">Please specify:</label>
+                            <textarea name="other_reason" id="other_reason" class="form-control" rows="3" placeholder="Please tell us more about your reason for cancellation..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="comments" class="form-label">Additional Comments (Optional):</label>
+                            <textarea name="comments" id="comments" class="form-control" rows="2" placeholder="Any additional feedback..."></textarea>
+                        </div>
+
+                        <!-- Refund Information -->
+                        {% if order.payment_status == 'paid' and order.payment_method != 'cod' %}
+                        
+                        {% elif order.payment_method == 'cod' %}
+                        
+                        {% endif %}
+
+                        <!-- Warning -->
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Keep Order
+                            </a>
+                            <button type="button" class="btn btn-danger" onclick="confirmCancellation(event)">
+                                <i class="fas fa-times me-2"></i>Cancel Order
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show/hide other reason text area
+const reasonEl = document.getElementById('reason');
+if (reasonEl) {
+    reasonEl.addEventListener('change', function() {
+        const otherReasonDiv = document.getElementById('otherReasonDiv');
+        const otherReasonInput = document.getElementById('other_reason');
+        if (this.value === 'other') {
+            if (otherReasonDiv) otherReasonDiv.style.display = 'block';
+            if (otherReasonInput) otherReasonInput.required = true;
+        } else {
+            if (otherReasonDiv) otherReasonDiv.style.display = 'none';
+            if (otherReasonInput) otherReasonInput.required = false;
+        }
+    });
+}
+
+// Confirm cancellation
+function confirmCancellation(e) {
+    const form = document.getElementById('cancelOrderForm');
+    const reasonInput = document.getElementById('reason');
+    const otherReasonInput = document.getElementById('other_reason');
+    if (!form || !reasonInput) return;
+
+    const reason = reasonInput.value;
+    if (!reason) return;
+    if (reason === 'other' && (!otherReasonInput || !otherReasonInput.value.trim())) return;
+
+    const confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
+    if (!confirm(confirmMsg)) return;
+
+    // Add loading state
+    const submitBtn = e && e.currentTarget ? e.currentTarget : null;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+    }
+
+    // Submit form
+    form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('cancelled')) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1000;';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i>
+                Order cancelled successfully. You will receive a confirmation SMS.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+});
+</script>
+{% endblock %}

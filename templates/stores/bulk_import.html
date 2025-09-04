@@ -1,0 +1,322 @@
+{% extends 'stores/base.html' %}
+
+{% block title %}Bulk Product Import{% endblock %}
+
+{% block store_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>
+                        Bulk Product Import for {{ store.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Form -->
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">Upload CSV File</label>
+                            <input type="file" class="form-control" id="csvFile" name="csv_file" accept=".csv" required>
+                            <div class="form-text">
+                                Select a CSV file containing your product data. 
+                                <a href="{% url 'stores:sample_csv' %}">Download sample format</a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-secondary me-2" onclick="validateCSV()">
+                                <i class="fas fa-check me-2"></i>Validate CSV
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="importCSV()" disabled id="importBtn">
+                                <i class="fas fa-upload me-2"></i>Import Products
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Progress Bar -->
+                    <div id="progressContainer" class="mb-3" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small id="progressText">Processing...</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div id="resultsContainer" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Instructions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">CSV Format Requirements</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Your CSV file must contain these columns:</p>
+                    <ul class="small">
+                        <li><strong>name</strong> - Product name (required)</li>
+                        <li><strong>category</strong> - Category name (required)</li>
+                        <li><strong>price</strong> - Price in ₹ (required)</li>
+                        <li><strong>weight</strong> - Weight in grams (required)</li>
+                        <li><strong>unit_type</strong> - Unit type (grams/kg/pieces)</li>
+                        <li><strong>description</strong> - Product description</li>
+                        <li><strong>sku</strong> - Product SKU</li>
+                        <li><strong>brand</strong> - Brand name</li>
+                        <li><strong>stock_quantity</strong> - Initial stock</li>
+                        <li><strong>is_featured</strong> - true/false for featured</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Categories -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Available Categories</h6>
+                </div>
+                <div class="card-body">
+                    {% for category in categories %}
+                    <span class="badge bg-secondary me-1 mb-1">{{ category.name }}</span>
+                    {% endfor %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            New categories will be created automatically if they don't exist.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Imports -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Quick Actions</h6>
+                    <a href="{% url 'stores:import_history' %}" class="btn btn-sm btn-outline-primary">
+                        View Import History
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <a href="{% url 'stores:sample_csv' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-download me-2"></i>Download Sample CSV
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button class="btn btn-outline-info w-100" onclick="showHelp()">
+                                <i class="fas fa-question-circle me-2"></i>Import Help
+                            </button>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button class="btn btn-outline-warning w-100" onclick="clearForm()">
+                                <i class="fas fa-redo me-2"></i>Reset Form
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">CSV Import Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Step-by-step Guide:</h6>
+                <ol>
+                    <li><strong>Prepare your CSV:</strong> Use Excel or Google Sheets to create your product data</li>
+                    <li><strong>Include required columns:</strong> name, category, price, weight</li>
+                    <li><strong>Format correctly:</strong> 
+                        <ul>
+                            <li>Prices should be numbers only (e.g., 250, not ₹250)</li>
+                            <li>Weight in grams (e.g., 1000 for 1kg)</li>
+                            <li>Boolean values: true/false, yes/no, or 1/0</li>
+                        </ul>
+                    </li>
+                    <li><strong>Save as CSV:</strong> Export/Save as "CSV" format</li>
+                    <li><strong>Upload and validate:</strong> Always validate before importing</li>
+                </ol>
+                
+                <h6 class="mt-4">Common Issues:</h6>
+                <ul>
+                    <li>Empty required fields will cause errors</li>
+                    <li>Invalid price formats (use numbers only)</li>
+                    <li>Duplicate product names will update existing products</li>
+                    <li>Large files may take time to process</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let validationPassed = false;
+
+function validateCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csv_file', file);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    showProgress('Validating CSV...');
+    
+    fetch('{% url "stores:validate_csv" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideProgress();
+        
+        if (data.success) {
+            const results = data.validation_results;
+            showValidationResults(results);
+            
+            if (results.invalid_rows === 0) {
+                validationPassed = true;
+                document.getElementById('importBtn').disabled = false;
+            }
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        hideProgress();
+        showError('Error validating CSV: ' + error.message);
+    });
+}
+
+function importCSV() {
+    if (!validationPassed) {
+        return;
+    }
+    
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    const formData = new FormData();
+    formData.append('csv_file', file);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    showProgress('Importing products...');
+    
+    fetch('{% url "stores:bulk_import" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideProgress();
+        
+        if (data.success) {
+            showImportResults(data.details);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        hideProgress();
+        showError('Error importing CSV: ' + error.message);
+    });
+}
+
+function showValidationResults(results) {
+    const container = document.getElementById('resultsContainer');
+    container.style.display = 'block';
+    
+    let html = `
+        
+    `;
+    
+    if (results.errors.length > 0) {
+        html += '';
+    }
+    
+    container.innerHTML = html;
+}
+
+function showImportResults(results) {
+    const container = document.getElementById('resultsContainer');
+    container.style.display = 'block';
+    
+    let html = `
+        
+    `;
+    
+    if (results.error_details.length > 0) {
+        html += '';
+    }
+    
+    container.innerHTML = html;
+    
+    // Reset form
+    setTimeout(() => {
+        clearForm();
+    }, 5000);
+}
+
+function showProgress(text) {
+    document.getElementById('progressContainer').style.display = 'block';
+    document.getElementById('progressText').textContent = text;
+    document.querySelector('.progress-bar').style.width = '50%';
+}
+
+function hideProgress() {
+    document.getElementById('progressContainer').style.display = 'none';
+    document.querySelector('.progress-bar').style.width = '0%';
+}
+
+function showError(message) {
+    const container = document.getElementById('resultsContainer');
+    container.style.display = 'block';
+    container.innerHTML = ``;
+}
+
+function clearForm() {
+    document.getElementById('csvFile').value = '';
+    document.getElementById('importBtn').disabled = true;
+    document.getElementById('resultsContainer').style.display = 'none';
+    validationPassed = false;
+}
+
+function showHelp() {
+    new bootstrap.Modal(document.getElementById('helpModal')).show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

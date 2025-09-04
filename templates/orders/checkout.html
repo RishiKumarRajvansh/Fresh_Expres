@@ -1,0 +1,551 @@
+{% extends 'base_mobile.html' %}
+{% load static %}
+
+{% block title %}Checkout - Fresh Express{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="h4 mb-3">
+                <i class="fas fa-credit-card me-2"></i>Checkout
+            </h2>
+            
+            <form method="post" id="checkoutForm">
+                {% csrf_token %}
+                
+                <!-- Delivery Address -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>Delivery Address
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if user_default_address %}
+                            <!-- Address Dropdown Selection -->
+                            <div class="mb-3">
+                                <label for="delivery_address_select" class="form-label fw-semibold">
+                                    <i class="fas fa-location-dot me-2"></i>Select Delivery Address
+                                </label>
+                                <select class="form-select" id="delivery_address_select" name="delivery_address_id" onchange="updateSelectedAddress()">
+                                    {% for address in addresses %}
+                                        <option value="{{ address.id }}" 
+                                                data-contact="{{ address.contact_person|default:user.get_full_name|default:user.username }}"
+                                                data-line1="{{ address.address_line_1 }}"
+                                                data-line2="{{ address.address_line_2|default:'' }}"
+                                                data-city="{{ address.city }}"
+                                                data-state="{{ address.state }}"
+                                                data-zip="{{ address.zip_code }}"
+                                                data-phone="{{ address.contact_phone|default:'' }}"
+                                                {% if address.is_default or address.id == user_default_address.id %}selected{% endif %}>
+                                            {{ address.label }} - {{ address.address_line_1|truncatechars:30 }}, {{ address.city }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Selected Address Display -->
+                            <div class="address-card p-3 border rounded" style="background-color: #FAF5F0;" id="selected-address-display">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div id="address-details">
+                                        <h6 class="mb-1" id="contact-name">{{ user_default_address.contact_person|default:user.get_full_name|default:user.username }}</h6>
+                                        <p class="mb-1" id="address-line-1">{{ user_default_address.address_line_1 }}</p>
+                                        {% if user_default_address.address_line_2 %}
+                                            <p class="mb-1" id="address-line-2">{{ user_default_address.address_line_2 }}</p>
+                                        {% else %}
+                                            <p class="mb-1 d-none" id="address-line-2"></p>
+                                        {% endif %}
+                                        <p class="mb-1" id="address-location">{{ user_default_address.city }}, {{ user_default_address.state }} {{ user_default_address.zip_code }}</p>
+                                        {% if user_default_address.contact_phone %}
+                                            <p class="mb-0 text-muted" id="contact-phone">
+                                                <i class="fas fa-phone me-1"></i>{{ user_default_address.contact_phone }}
+                                            </p>
+                                        {% else %}
+                                            <p class="mb-0 text-muted d-none" id="contact-phone"></p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <a href="{% url 'accounts:add_address' %}?next=checkout" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-plus me-1"></i>Add New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif addresses %}
+                            <div class="mb-3">
+                                <p class="mb-2">Choose a delivery address:</p>
+                                {% for address in addresses %}
+                                <div class="address-card p-3 border rounded mb-2" style="cursor: pointer;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="delivery_address" 
+                                               id="address_{{ address.id }}" value="{{ address.id }}"
+                                               {% if address.is_default or forloop.first %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="address_{{ address.id }}">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ address.contact_person|default:user.get_full_name|default:user.username }}</h6>
+                                                    <p class="mb-1">{{ address.address_line_1 }}</p>
+                                                    {% if address.address_line_2 %}
+                                                        <p class="mb-1">{{ address.address_line_2 }}</p>
+                                                    {% endif %}
+                                                    <p class="mb-1">{{ address.city }}, {{ address.state }} {{ address.zip_code }}</p>
+                                                    {% if address.contact_phone %}
+                                                        <p class="mb-0 text-muted">{{ address.contact_phone }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <a href="{% url 'accounts:add_address' %}?next=checkout" 
+                                   class="btn btn-sm" 
+                                   style="background-color: #4CAF50; border-color: #4CAF50; color: white;">
+                                    Add New Address
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-map-marker-alt text-muted mb-2" style="font-size: 2rem;"></i>
+                                <p class="mb-3">Please add a delivery address</p>
+                                <a href="{% url 'accounts:add_address' %}?next=checkout" 
+                                   class="btn" 
+                                   style="background-color: #4CAF50; border-color: #4CAF50; color: white;">
+                                    Add Address
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Order Items -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-shopping-bag me-2"></i>Order Items
+                            <span class="badge bg-primary ms-2">{{ total_items }}</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for cart in carts %}
+                            <div class="store-section">
+                                <div class="bg-light p-2 border-bottom">
+                                    <small class="text-muted">
+                                        <i class="fas fa-store me-1"></i>{{ cart.store.name }}
+                                    </small>
+                                </div>
+                                {% for item in cart.items.all %}
+                                <div class="d-flex align-items-center p-3 border-bottom">
+                                    <div class="me-3">
+                                        {% if item.store_product.product.image %}
+                                            <img src="{{ item.store_product.product.image.url }}" 
+                                                 alt="{{ item.store_product.product.name }}"
+                                                 class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-image text-muted small"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 small">{{ item.store_product.product.name }}</h6>
+                                        <small class="text-muted">{{ item.store_product.product.weight_per_unit }}g × {{ item.quantity }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="price">₹{{ item.total_price }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Payment Method -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>Payment Method
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-methods">
+                            <!-- UPI Payment - Default and Recommended -->
+                            <div class="form-check mb-3 p-3 border rounded border-primary">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="upi" value="upi" checked>
+                                <label class="form-check-label w-100" for="upi">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-mobile-alt text-primary me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>UPI Payment <span class="badge bg-primary ms-2">Recommended</span></strong>
+                                            <br><small class="text-muted">Fast & Secure - Pay using PhonePe, Google Pay, Paytm & more</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <!-- Card Payment -->
+                            <div class="form-check mb-3 p-3 border rounded">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="card" value="card">
+                                <label class="form-check-label w-100" for="card">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card text-warning me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Credit/Debit Card</strong>
+                                            <br><small class="text-muted">Visa, Mastercard, Rupay accepted</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <!-- Cash on Delivery -->
+                            <div class="form-check mb-3 p-3 border rounded">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="cod" value="cod">
+                                <label class="form-check-label w-100" for="cod">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave text-success me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Cash on Delivery</strong>
+                                            <br><small class="text-muted">Pay when your order arrives</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Special Instructions -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>Special Instructions (Optional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea name="instructions" class="form-control" rows="3" 
+                                  placeholder="Any special instructions for delivery..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Order Summary</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal ({{ total_items }} items)</span>
+                            <span>₹{{ total_amount }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Fee</span>
+                            <span class="text-success">Free</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>GST & Taxes</span>
+                            <span>₹0</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold h5">
+                            <span>Total Amount</span>
+                            <span class="price">₹{{ total_amount }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Place Order Button -->
+                <div class="sticky-bottom mt-3">
+                    <div class="d-grid gap-2">
+                        {% if user_default_address or addresses %}
+                            <button type="submit" class="btn btn-primary btn-lg" id="placeOrderBtn">
+                                <i class="fas fa-check me-2"></i>Place Order - ₹{{ total_amount }}
+                            </button>
+                        {% else %}
+                            <a href="{% url 'accounts:add_address' %}?next=checkout" class="btn btn-primary btn-lg">
+                                <i class="fas fa-map-marker-alt me-2"></i>Add Address to Continue
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'orders:cart' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Cart
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Payment App</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 payment-app" data-app="googlepay">
+                            <i class="fab fa-google-pay"></i><br>Google Pay
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 payment-app" data-app="phonepe">
+                            <i class="fas fa-mobile-alt"></i><br>PhonePe
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 payment-app" data-app="paytm">
+                            <i class="fas fa-wallet"></i><br>Paytm
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary w-100 payment-app" data-app="amazonpay">
+                            <i class="fab fa-amazon"></i><br>Amazon Pay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced checkout validation with address persistence
+document.addEventListener('DOMContentLoaded', function() {
+    const checkoutForm = document.getElementById('checkoutForm');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const addressSelect = document.getElementById('delivery_address_select');
+    
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate address selection
+            let deliveryAddressId = null;
+            
+            // Check for dropdown first
+            const addressSelect = document.getElementById('delivery_address_select');
+            if (addressSelect) {
+                deliveryAddressId = addressSelect.value;
+            } else {
+                // Check for radio buttons
+                const selectedRadio = document.querySelector('input[name="delivery_address"]:checked');
+                if (selectedRadio) {
+                    deliveryAddressId = selectedRadio.value;
+                }
+            }
+            
+            if (!deliveryAddressId) {
+                showCheckoutToast('Please select a delivery address before placing your order.', 'error');
+                if (placeOrderBtn) {
+                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.innerHTML = '<i class="fas fa-check me-2"></i>Place Order - ₹{{ total_amount }}';
+                }
+                return;
+            }
+            
+            // Validate payment method
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
+            if (!paymentMethod) {
+                showCheckoutToast('Please select a payment method.', 'error');
+                return;
+            }
+            
+            // Disable button to prevent double submission
+            if (placeOrderBtn) {
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            }
+            
+            // Add delivery address to form if using dropdown
+            if (addressSelect && addressSelect.value && !document.querySelector('input[name="delivery_address_id"]')) {
+                const hiddenAddressInput = document.createElement('input');
+                hiddenAddressInput.type = 'hidden';
+                hiddenAddressInput.name = 'delivery_address_id';
+                hiddenAddressInput.value = deliveryAddressId;
+                this.appendChild(hiddenAddressInput);
+            }
+            
+            if (paymentMethod === 'upi') {
+                // Show UPI payment modal
+                const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                paymentModal.show();
+                
+                // Re-enable button
+                if (placeOrderBtn) {
+                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.innerHTML = '<i class="fas fa-check me-2"></i>Place Order - ₹{{ total_amount }}';
+                }
+            } else {
+                // Submit form for COD or card
+                this.submit();
+            }
+        });
+    }
+    
+    // Handle address radio button changes
+    document.querySelectorAll('input[name="delivery_address"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.address-card').forEach(card => {
+                card.classList.remove('border-primary', 'bg-light');
+            });
+            
+            if (this.checked) {
+                const addressCard = this.closest('.address-card');
+                if (addressCard) {
+                    addressCard.classList.add('border-primary', 'bg-light');
+                }
+                showCheckoutToast('Address selected successfully!', 'success');
+            }
+        });
+    });
+    
+    // Handle payment method changes
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.form-check').forEach(check => {
+                check.classList.remove('border-primary', 'bg-light');
+            });
+            
+            if (this.checked) {
+                const formCheck = this.closest('.form-check');
+                if (formCheck) {
+                    formCheck.classList.add('border-primary', 'bg-light');
+                }
+            }
+        });
+    });
+    
+    // Initialize selections
+    const selectedAddress = document.querySelector('input[name="delivery_address"]:checked');
+    if (selectedAddress) {
+        selectedAddress.dispatchEvent(new Event('change'));
+    }
+    
+    const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+    if (selectedPayment) {
+        selectedPayment.dispatchEvent(new Event('change'));
+    }
+    
+    // Handle UPI app selection
+    document.querySelectorAll('.payment-app').forEach(button => {
+        button.addEventListener('click', function() {
+            const app = this.dataset.app;
+            
+            // Validate address again before UPI
+            const deliveryAddressId = addressSelect ? addressSelect.value : 
+                                     document.querySelector('input[name="delivery_address"]:checked')?.value;
+            
+            if (!deliveryAddressId) {
+                showCheckoutToast('Please select a delivery address first.', 'error');
+                return;
+            }
+            
+            // Add hidden input for selected UPI app
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'upi_app';
+            hiddenInput.value = app;
+            checkoutForm.appendChild(hiddenInput);
+            
+            // Close modal and submit form
+            bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+            checkoutForm.submit();
+        });
+    });
+});
+
+// Address dropdown change handler
+function updateSelectedAddress() {
+    const select = document.getElementById('delivery_address_select');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        // Update the display elements
+        const contactName = document.getElementById('contact-name');
+        const addressLine1 = document.getElementById('address-line-1');
+        const addressLine2 = document.getElementById('address-line-2');
+        const addressLocation = document.getElementById('address-location');
+        const contactPhone = document.getElementById('contact-phone');
+        
+        if (contactName) contactName.textContent = selectedOption.dataset.contact;
+        if (addressLine1) addressLine1.textContent = selectedOption.dataset.line1;
+        
+        if (addressLine2) {
+            if (selectedOption.dataset.line2) {
+                addressLine2.textContent = selectedOption.dataset.line2;
+                addressLine2.classList.remove('d-none');
+            } else {
+                addressLine2.classList.add('d-none');
+            }
+        }
+        
+        if (addressLocation) {
+            addressLocation.textContent = 
+                `${selectedOption.dataset.city}, ${selectedOption.dataset.state} ${selectedOption.dataset.zip}`;
+        }
+        
+        if (contactPhone) {
+            if (selectedOption.dataset.phone) {
+                contactPhone.innerHTML = `<i class="fas fa-phone me-1"></i>${selectedOption.dataset.phone}`;
+                contactPhone.classList.remove('d-none');
+            } else {
+                contactPhone.classList.add('d-none');
+            }
+        }
+        
+        showCheckoutToast('Delivery address updated successfully!', 'success');
+    }
+}
+
+// Checkout-specific toast notifications
+function showCheckoutToast(message, type = 'info') {
+    // Remove any existing checkout toasts
+    document.querySelectorAll('.checkout-toast').forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `toast show position-fixed checkout-toast`;
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '350px';
+    
+    const bgColor = type === 'success' ? 'bg-success' : 
+                   type === 'error' ? 'bg-danger' : 
+                   type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    const iconClass = type === 'success' ? 'check-circle' : 
+                     type === 'error' ? 'exclamation-circle' : 
+                     type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-header ${bgColor} text-white">
+            <i class="fas fa-${iconClass} me-2"></i>
+            <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
+        </div>
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after timeout
+    const timeout = type === 'error' ? 8000 : 4000;
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, timeout);
+}
+</script>
+
+{% endblock %}

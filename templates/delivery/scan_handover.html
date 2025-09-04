@@ -1,0 +1,262 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Enter Handover Code - Delivery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .handover-input {
+        font-size: 24px;
+        text-align: center;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+    }
+    .code-digit {
+        width: 50px;
+        height: 60px;
+        margin: 0 5px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        border: 2px solid #007bff;
+        border-radius: 8px;
+    }
+    .result-modal .modal-dialog {
+        margin-top: 100px;
+    }
+    .success-animation {
+        animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Header -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Package Handover Verification
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">Enter the 6-digit handover code from the store</p>
+                    <small class="text-muted">The store will provide you with this code when handing over the package</small>
+                </div>
+            </div>
+
+            <!-- Handover Code Input -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form id="handoverCodeForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Handover Code:</label>
+                            <div class="row justify-content-center">
+                                <div class="col-auto">
+                                    <div class="d-flex justify-content-center">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit1" autocomplete="off">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit2" autocomplete="off">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit3" autocomplete="off">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit4" autocomplete="off">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit5" autocomplete="off">
+                                        <input type="text" class="form-control code-digit" maxlength="1" id="digit6" autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <small class="text-muted">Enter the 6-character code one digit at a time</small>
+                            </div>
+                        </div>
+
+                        <!-- Alternative single input -->
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Or enter complete code:</label>
+                                    <input type="text" class="form-control handover-input" id="fullCode" placeholder="ABC123" maxlength="6" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg me-3" id="verifyBtn">
+                                <i class="fas fa-check me-2"></i>Verify Handover
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg" onclick="clearCode()">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </button>
+                        </div>
+
+                        <div class="mt-3 text-center">
+                            <div id="loadingSpinner" class="d-none">
+                                <div class="spinner-border text-primary me-2" role="status"></div>
+                                <span>Verifying code...</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            
+        </div>
+    </div>
+</div>
+
+<!-- Result Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog result-modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <h5 class="modal-title" id="modalTitle">Handover Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary d-none" id="continueBtn" onclick="continueToDelivery()">
+                    Continue to Delivery
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle digit inputs
+    const digitInputs = document.querySelectorAll('.code-digit');
+    const fullCodeInput = document.getElementById('fullCode');
+    
+    // Auto-focus and move to next digit
+    digitInputs.forEach((input, index) => {
+        input.addEventListener('input', function() {
+            if (this.value) {
+                this.value = this.value.toUpperCase();
+                if (index < digitInputs.length - 1) {
+                    digitInputs[index + 1].focus();
+                }
+                updateFullCode();
+            }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && index > 0) {
+                digitInputs[index - 1].focus();
+            }
+        });
+    });
+    
+    // Handle full code input
+    fullCodeInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+        const code = this.value.slice(0, 6);
+        
+        // Fill individual digit inputs
+        digitInputs.forEach((input, index) => {
+            input.value = code[index] || '';
+        });
+    });
+    
+    function updateFullCode() {
+        const code = Array.from(digitInputs).map(input => input.value).join('');
+        fullCodeInput.value = code;
+    }
+});
+
+document.getElementById('handoverCodeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const code = document.getElementById('fullCode').value.trim().toUpperCase();
+    
+    if (code.length !== 6) {
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingSpinner').classList.remove('d-none');
+    document.getElementById('verifyBtn').disabled = true;
+    
+    // Submit handover verification
+    fetch('{% url "delivery:scan_handover_code" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            handover_code: code
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide loading
+        document.getElementById('loadingSpinner').classList.add('d-none');
+        document.getElementById('verifyBtn').disabled = false;
+        
+        const modal = document.getElementById('resultModal');
+        const modalHeader = document.getElementById('modalHeader');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const continueBtn = document.getElementById('continueBtn');
+        
+        if (data.success) {
+            modalHeader.className = 'modal-header bg-success text-white';
+            modalTitle.textContent = 'Handover Confirmed!';
+            modalBody.innerHTML = `
+                <div class="text-center success-animation">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h5>Package Successfully Received</h5>
+                    
+                    <p>You can now proceed with delivery to the customer.</p>
+                </div>
+            `;
+            continueBtn.classList.remove('d-none');
+            continueBtn.setAttribute('data-order-id', data.order_id);
+            
+            // Clear form
+            clearCode();
+        } else {
+            modalHeader.className = 'modal-header bg-danger text-white';
+            modalTitle.textContent = 'Verification Failed';
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                    <h5>Invalid Handover Code</h5>
+                    <p class="text-danger">${data.message}</p>
+                    <p>Please check the code with the store and try again.</p>
+                </div>
+            `;
+            continueBtn.classList.add('d-none');
+        }
+        
+        new bootstrap.Modal(modal).show();
+    })
+    .catch(error => {
+        document.getElementById('loadingSpinner').classList.add('d-none');
+        document.getElementById('verifyBtn').disabled = false;
+    });
+});
+
+function clearCode() {
+    document.querySelectorAll('.code-digit').forEach(input => input.value = '');
+    document.getElementById('fullCode').value = '';
+    document.getElementById('digit1').focus();
+}
+
+function continueToDelivery() {
+    const orderId = document.getElementById('continueBtn').getAttribute('data-order-id');
+    // Redirect to delivery confirmation or assignment page
+    window.location.href = '{% url "delivery:confirm_delivery" %}';
+}
+</script>
+{% endblock %}

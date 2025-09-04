@@ -1,0 +1,269 @@
+{% extends 'base_mobile.html' %}
+
+{% block title %}Track Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                </a>
+            </div>
+
+            <!-- Order Header -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-1">Track Order #{{ order.order_number }}</h4>
+                    <small>Placed on {{ order.created_at|date:"F d, Y at g:i A" }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Store:</strong> {{ order.store.name }}</p>
+                            <p class="mb-1"><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Payment:</strong> {{ order.get_payment_method_display }}</p>
+                            <p class="mb-1"><strong>Status:</strong> 
+                                <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'confirmed' %}primary{% else %}warning{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </p>
+                            {% if order.delivery_confirmation_code and order.status != 'delivered' %}
+                            <p class="mb-1"><strong>Delivery Code:</strong> 
+                                <span class="badge bg-info fs-6">{{ order.delivery_confirmation_code }}</span>
+                                <small class="text-muted d-block">Show this code to the delivery agent</small>
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Progress Tracker -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Order Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="order-progress">
+                        <!-- Placed -->
+                        <div class="progress-step {% if order.status == 'placed' or order.status == 'confirmed' or order.status == 'preparing' or order.status == 'packed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Order Placed</h6>
+                                <small class="text-muted">{{ order.created_at|date:"M d, Y g:i A" }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Confirmed -->
+                        <div class="progress-step {% if order.status == 'confirmed' or order.status == 'preparing' or order.status == 'packed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Order Confirmed</h6>
+                                <small class="text-muted">
+                                    {% if order.status != 'placed' %}
+                                        Being processed by store
+                                    {% else %}
+                                        Waiting for confirmation
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Preparing -->
+                        <div class="progress-step {% if order.status == 'preparing' or order.status == 'packed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Preparing</h6>
+                                <small class="text-muted">
+                                    {% if order.status == 'preparing' %}
+                                        Your order is being prepared
+                                    {% elif order.status == 'packed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                                        Order prepared
+                                    {% else %}
+                                        Not started yet
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Packed -->
+                        <div class="progress-step {% if order.status == 'packed' or order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Packed</h6>
+                                <small class="text-muted">
+                                    {% if order.status == 'packed' %}
+                                        Ready for pickup
+                                    {% elif order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                                        Order packed and ready
+                                    {% else %}
+                                        Not packed yet
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Out for Delivery -->
+                        <div class="progress-step {% if order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Out for Delivery</h6>
+                                <small class="text-muted">
+                                    {% if order.status == 'out_for_delivery' %}
+                                        On the way to you
+                                    {% elif order.status == 'delivered' %}
+                                        Was out for delivery
+                                    {% else %}
+                                        Not dispatched yet
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Delivered -->
+                        <div class="progress-step {% if order.status == 'delivered' %}completed{% endif %}">
+                            <div class="step-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="step-content">
+                                <h6>Delivered</h6>
+                                <small class="text-muted">
+                                    {% if order.status == 'delivered' %}
+                                        Order delivered successfully
+                                    {% else %}
+                                        Pending delivery
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6>Delivery Address</h6>
+                            <p class="mb-1"><strong>{{ order.delivery_address.full_name }}</strong></p>
+                            <p class="text-muted">
+                                {{ order.delivery_address.address_line_1 }}<br>
+                                {% if order.delivery_address.address_line_2 %}{{ order.delivery_address.address_line_2 }}<br>{% endif %}
+                                {{ order.delivery_address.city }}, {{ order.delivery_address.state }} - {{ order.delivery_address.pincode }}
+                            </p>
+                            {% if order.delivery_address.phone %}
+                            <p class="text-muted"><i class="fas fa-phone me-1"></i>{{ order.delivery_address.phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if order.estimated_delivery_time %}
+                    
+                    {% endif %}
+
+                    {% if order.delivery_slot %}
+                    
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-phone me-2"></i>Need Help?</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">If you have any questions about your order, feel free to contact us:</p>
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i>Customer Support: <strong>+91-XXXXXXXXXX</strong></p>
+                    <p class="mb-1"><i class="fas fa-store me-2"></i>{{ order.store.name }}: <strong>{{ order.store.phone_number|default:"Contact via support" }}</strong></p>
+                    <p class="mb-3"><i class="fas fa-envelope me-2"></i>Email: <strong>support@meatseafood.com</strong></p>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'core:chat_support' %}" class="btn btn-primary">
+                            <i class="fas fa-comments me-2"></i>Live Chat
+                        </a>
+                        <a href="{% url 'core:contact' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Contact Us
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.order-progress {
+    position: relative;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 25px;
+    top: 50px;
+    width: 2px;
+    height: 40px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.progress-step.completed:not(:last-child)::after {
+    background: #28a745;
+}
+
+.step-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step.completed .step-icon {
+    background: #28a745;
+    color: white;
+}
+
+.step-content h6 {
+    margin-bottom: 0.25rem;
+}
+
+.progress-step.completed .step-content h6 {
+    color: #28a745;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

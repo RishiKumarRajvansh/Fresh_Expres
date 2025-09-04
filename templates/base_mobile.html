@@ -1,0 +1,771 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fresh Express Delivery{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS Files -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/appetite-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/cart.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/wishlist.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/search.css' %}">
+
+        <script>
+        (function(){
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){
+                const logoutForms = document.querySelectorAll('form[data-logout]');
+                logoutForms.forEach(form => {
+                    const handler = function(e){
+                        e.preventDefault();
+                        const url = form.getAttribute('action') || window.location.href;
+                        const redirect = form.getAttribute('data-redirect') || '/';
+                        const csrftoken = getCookie('csrftoken');
+
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrftoken,
+                                'Accept': 'application/json'
+                            },
+                            credentials: 'same-origin'
+                        }).then(resp => {
+                            window.location.href = redirect;
+                        }).catch(err => {
+                            console.error('Logout fetch failed', err);
+                            const fallback = document.getElementById('logout-get-fallback-mobile');
+                            if (fallback) { fallback.classList.remove('d-none'); fallback.click(); return; }
+                            form.removeEventListener('submit', handler);
+                            form.submit();
+                        });
+                    };
+
+                    form.addEventListener('submit', handler);
+                });
+            });
+        })();
+        </script>
+    <link rel="stylesheet" href="{% static 'css/mobile-overflow-fix.css' %}">
+    <link rel="stylesheet" href="{% static 'css/global-product-card.css' %}">
+    
+    <!-- Additional CSS for specific pages -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    
+
+    <!-- Mobile-first Navigation -->
+    <nav class="navbar navbar-expand-lg modern-navbar">
+        <div class="container" style="overflow: hidden;">
+            <a class="navbar-brand modern-brand" href="{% url 'core:home' %}">
+                <i class="fas fa-drumstick-bite me-2"></i>Fresh Express
+            </a>
+            
+            <!-- Mobile Top Icons (Wishlist, Cart for customers) - Only visible on mobile -->
+            {% if user.is_authenticated and is_customer %}
+            <div class="d-flex align-items-center mobile-top-icons d-lg-none">
+                <!-- Wishlist -->
+                <a class="nav-link position-relative me-3" href="{% url 'accounts:wishlist' %}">
+                    <i class="fas fa-heart fa-lg text-white"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle cart-badge">
+                        <span id="mobile-top-wishlist-count">{{ total_wishlist_items|default:0 }}</span>
+                    </span>
+                </a>
+                
+                <!-- Cart -->
+                <a class="nav-link position-relative me-2" href="{% url 'orders:cart' %}">
+                    <i class="fas fa-shopping-cart fa-lg text-white"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle cart-badge">
+                        <span id="mobile-top-cart-count">{{ total_cart_items|default:0 }}</span>
+                    </span>
+                </a>
+            </div>
+            {% endif %}
+            
+            <!-- Location Selector (show for anonymous users and customers only; hide for store/delivery roles) -->
+            {% if not user.is_authenticated or is_customer %}
+                {% if zip_area %}
+                    {% if selected_zip_code %}
+                        <div class="dropdown location-dropdown">
+                            <button class="location-selector me-auto dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown" aria-expanded="false" id="locationDropdown">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ zip_area.city }} - {{ zip_area.zip_code }}
+                            </button>
+                            <ul class="dropdown-menu location-dropdown-menu">
+                                <li>
+                                    <div class="px-3 py-2">
+                                        <h6 class="dropdown-header">Change Location</h6>
+                                        <form id="zipForm" method="POST" action="{% url 'core:change_zip' %}">
+                                            {% csrf_token %}
+                                            <div class="mb-2">
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       name="zip_code" placeholder="Enter ZIP code" 
+                                                       id="zipInput" maxlength="6">
+                                            </div>
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-search me-1"></i>Change Location
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                        onclick="getCurrentLocation()">
+                                                    <i class="fas fa-crosshairs me-1"></i>Use Current Location
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="dropdown location-dropdown">
+                            <button class="location-selector me-auto dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown" aria-expanded="false" id="locationDropdown">
+                                <i class="fas fa-map-marker-alt me-2"></i>Select Location
+                            </button>
+                            <ul class="dropdown-menu location-dropdown-menu">
+                                <li>
+                                    <div class="px-3 py-2">
+                                        <h6 class="dropdown-header">Choose Your Location</h6>
+                                        <form id="zipForm" method="POST" action="{% url 'core:change_zip' %}">
+                                            {% csrf_token %}
+                                            <div class="mb-2">
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       name="zip_code" placeholder="Enter ZIP code" 
+                                                       id="zipInput" maxlength="6">
+                                            </div>
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-search me-1"></i>Set Location
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                        onclick="getCurrentLocation()">
+                                                    <i class="fas fa-crosshairs me-1"></i>Use Current Location
+                                                </button>
+                                            </div>
+                                        </form>
+                                        <div class="mt-3 pt-2 border-top">
+                                            <div class="d-grid gap-2">
+                                                <a href="{% url 'accounts:customer_login' %}" class="btn btn-outline-success btn-sm">
+                                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                                </a>
+                                                <a href="{% url 'accounts:customer_register' %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-user-plus me-1"></i>Register
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            
+            <!-- Desktop Navigation -->
+            <div class="navbar-nav ms-auto desktop-nav">
+                <ul class="navbar-nav align-items-center">
+                    <!-- Search -->
+                    <li class="nav-item me-3">
+                        <form method="GET" action="{% url 'catalog:product_list' %}" class="d-flex">
+                            <div class="input-group" style="width: 300px;">
+                                <input type="text" class="form-control form-control-sm" 
+                                       placeholder="Search for products..." name="q" id="search-input"
+                                       value="{{ request.GET.q }}">
+                                <button class="btn btn-outline-light btn-sm" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </li>
+                    
+                    <!-- Wishlist - Only for customers -->
+                    {% if user.is_authenticated and is_customer %}
+                    <li class="nav-item me-3">
+                        <a class="nav-link position-relative" href="{% url 'accounts:wishlist' %}">
+                            <i class="fas fa-heart fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle cart-badge">
+                                <span id="wishlist-count">{{ total_wishlist_items|default:0 }}</span>
+                            </span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Cart - Only for customers -->
+                    {% if user.is_authenticated and is_customer %}
+                    <li class="nav-item me-3">
+                        <a class="nav-link position-relative" href="{% url 'orders:cart' %}">
+                            <i class="fas fa-shopping-cart fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle cart-badge">
+                                <span id="cart-count">{{ total_cart_items|default:0 }}</span>
+                            </span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- User Menu -->
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+                                <i class="fas fa-user" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <span class="d-none d-md-inline">{{ user.first_name|default:user.username|truncatechars:10 }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-header">
+                                <small >{{ user.get_full_name|default:user.username }}</small>
+                                <br><small class="badge bg-secondary">{{ user.get_user_type_display }}</small>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Role-based menu items -->
+                            {% if user.is_staff or user.is_superuser %}
+                            <li><a class="dropdown-item" href="/admin/">
+                                <i class="fas fa-cog me-2"></i>Django Admin
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% elif user.user_type == 'store_owner' %}
+                            <li><a class="dropdown-item" href="{% url 'stores:dashboard' %}">
+                                <i class="fas fa-store me-2"></i>Store Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'stores:orders_management' %}">
+                                <i class="fas fa-shopping-bag me-2"></i>Manage Orders
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% elif user.user_type == 'store_owner' %}
+                            <li><a class="dropdown-item" href="{% url 'stores:staff_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Staff Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'stores:staff_orders' %}">
+                                <i class="fas fa-tasks me-2"></i>My Assigned Orders
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% elif user.user_type == 'delivery_agent' %}
+                            <li><a class="dropdown-item" href="/delivery/dashboard/">
+                                <i class="fas fa-truck me-2"></i>Delivery Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% else %}
+                            <!-- Customer menu items -->
+                            <li><a class="dropdown-item" href="{% url 'core:customer_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Customer Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">
+                                <i class="fas fa-box me-2"></i>My Orders
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:address_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>My Addresses
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'payments:payment_methods' %}">
+                                <i class="fas fa-credit-card me-2"></i>Payment Methods
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:wishlist' %}">
+                                <i class="fas fa-heart me-2"></i>My Wishlist
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:cart' %}">
+                                <i class="fas fa-shopping-cart me-2"></i>My Cart
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:loyalty_dashboard' %}">
+                                <i class="fas fa-star me-2"></i>Loyalty & Rewards
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            
+                            <!-- Common menu items -->
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'chat:chat_list' %}">
+                                <i class="fas fa-headset me-2"></i>Support
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;" data-logout="true"
+                                    data-redirect="{% if user.user_type == 'delivery_agent' %}{% url 'accounts:email_login' %}?type=delivery{% elif user.user_type == 'store_owner' %}{% url 'accounts:email_login' %}?type=store{% else %}{% url 'core:home' %}{% endif %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item me-2">
+                        <a class="nav-link" href="{% url 'accounts:customer_login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-light btn-sm" href="{% url 'accounts:customer_register' %}">
+                            <i class="fas fa-user-plus me-1"></i>Register
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav d-lg-none">
+        <div class="container-fluid">
+            <div class="row">
+                {% if user.is_authenticated and user.user_type == 'delivery_agent' %}
+                <!-- Delivery Agent Bottom Navigation -->
+                <div class="col">
+                    <a href="{% url 'delivery:agent_dashboard' %}" class="bottom-nav-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'delivery:agent_dashboard' %}" class="bottom-nav-item">
+                        <i class="fas fa-truck"></i>
+                        <span>Deliveries</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <div class="dropdown dropup" id="mobileProfileDropdownDelivery">
+                        <button class="bottom-nav-item" type="button" aria-expanded="false" id="profileDropdownBtnDelivery">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown" id="profileDropdownMenuDelivery">
+                            <div class="dropdown-header text-center">
+                                <div class="rounded-circle bg-info text-white mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                                <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+                                <small class="text-muted">{{ user.get_user_type_display }}</small>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>My Profile
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;" data-logout="true"
+                                data-redirect="{% url 'accounts:email_login' %}?type=delivery">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                {% elif user.is_authenticated and user.user_type == 'store_owner' %}
+                <!-- Store Owner/Staff Bottom Navigation -->
+                <div class="col">
+                    <a href="{% url 'stores:dashboard' %}" class="bottom-nav-item">
+                        <i class="fas fa-store"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'stores:orders_management' %}" class="bottom-nav-item">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Orders</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'stores:inventory_management' %}" class="bottom-nav-item">
+                        <i class="fas fa-boxes"></i>
+                        <span>Inventory</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <div class="dropdown dropup" id="mobileProfileDropdownStore">
+                        <button class="bottom-nav-item" type="button" aria-expanded="false" id="profileDropdownBtnStore">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown" id="profileDropdownMenuStore">
+                            <div class="dropdown-header text-center">
+                                <div class="rounded-circle bg-warning text-white mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+                                <small class="text-muted">{{ user.get_user_type_display }}</small>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>My Profile
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;" data-logout="true"
+                                data-redirect="{% url 'accounts:email_login' %}?type=store">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                {% elif is_customer %}
+                <!-- Customer Bottom Navigation -->
+                <div class="col">
+                    <a href="{% url 'core:home' %}" class="bottom-nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'catalog:product_list' %}" class="bottom-nav-item">
+                        <i class="fas fa-search"></i>
+                        <span>Explore</span>
+                    </a>
+                </div>
+                {% if user.is_authenticated %}
+                <div class="col">
+                    <a href="{% url 'orders:order_list' %}" class="bottom-nav-item">
+                        <i class="fas fa-box"></i>
+                        <span>Orders</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <div class="dropdown dropup" id="mobileProfileDropdown">
+                        <button class="bottom-nav-item" type="button" aria-expanded="false" id="profileDropdownBtn">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown" id="profileDropdownMenu">
+                            <div class="dropdown-header text-center">
+                                <div class="rounded-circle bg-success text-white mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+                                <small class="text-muted">{{ user.get_user_type_display }}</small>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'core:customer_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user me-2"></i>My Profile
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts:address_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>My Addresses
+                            </a>
+                            <a class="dropdown-item" href="{% url 'accounts:loyalty_dashboard' %}">
+                                <i class="fas fa-star me-2"></i>Loyalty & Rewards
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;" data-logout="true"
+                                data-redirect="{% url 'core:home' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="col">
+                    <a href="{% url 'core:home' %}" class="bottom-nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'catalog:product_list' %}" class="bottom-nav-item">
+                        <i class="fas fa-search"></i>
+                        <span>Explore</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'accounts:customer_login' %}" class="bottom-nav-item">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Login</span>
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'accounts:customer_register' %}" class="bottom-nav-item">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Register</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Toast Container -->
+        
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
+    </div>
+    <!-- Footer -->
+    <footer class="modern-footer py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold mb-3">🥩 Fresh Express</h6>
+                    <p class="small mb-2">Premium quality delivered in just 30 minutes!</p>
+                    <p class="small mb-0">Your trusted source for fresh, quality meat and seafood.</p>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold mb-3">Shop</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'catalog:product_list' %}" class="text-white-50 text-decoration-none small">All Products</a></li>
+                        <li><a href="{% url 'catalog:product_list' %}?category=fresh-meat" class="text-white-50 text-decoration-none small">Fresh Express</a></li>
+                        <li><a href="{% url 'catalog:product_list' %}?category=seafood" class="text-white-50 text-decoration-none small">Seafood</a></li>
+                        <li><a href="{% url 'catalog:product_list' %}?category=poultry" class="text-white-50 text-decoration-none small">Poultry</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold mb-3">Account</h6>
+                    <ul class="list-unstyled">
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'accounts:profile' %}" class="text-white-50 text-decoration-none small">My Profile</a></li>
+                            <li><a href="{% url 'orders:order_list' %}" class="text-white-50 text-decoration-none small">My Orders</a></li>
+                            <li><a href="{% url 'accounts:address_list' %}" class="text-white-50 text-decoration-none small">Addresses</a></li>
+                        {% else %}
+                            <li><a href="{% url 'accounts:customer_login' %}" class="text-white-50 text-decoration-none small">Login</a></li>
+                            <li><a href="{% url 'accounts:customer_register' %}" class="text-white-50 text-decoration-none small">Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold mb-3">Business</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'accounts:business_register' %}" class="text-white-50 text-decoration-none small">Join Us</a></li>
+                        <li><a href="{% url 'accounts:store_register' %}" class="text-white-50 text-decoration-none small">Store Owner</a></li>
+                        <li><a href="{% url 'accounts:delivery_register' %}" class="text-white-50 text-decoration-none small">Delivery Agent</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold mb-3">Support</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'core:contact' %}" class="text-white-50 text-decoration-none small">Contact Us</a></li>
+                        <li><a href="{% url 'core:about' %}" class="text-white-50 text-decoration-none small">About</a></li>
+                        <li><a href="{% url 'core:faq' %}" class="text-white-50 text-decoration-none small">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold mb-3">Connect</h6>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="text-white-50"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="small mb-0">&copy; 2025 Fresh Express. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-white-50">
+                        <a href="{% url 'core:privacy' %}" class="text-white-50 text-decoration-none me-3">Privacy Policy</a>
+                        <a href="{% url 'core:terms' %}" class="text-white-50 text-decoration-none">Terms of Service</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS Files -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/components/cart.js"></script>
+    <script src="/static/js/components/wishlist.js"></script>
+    <script src="/static/js/components/search.js"></script>
+    
+    <!-- Global functions for navbar -->
+    <script>
+        // Make chat function globally available
+        window.openCustomerSupport = function() {
+            const existingChat = document.getElementById('chat-window');
+            if (existingChat) {
+                existingChat.style.display = 'block';
+            } else {
+                createChatWindow();
+            }
+        };
+
+        // Geolocation functionality
+        async function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        try {
+                            // Show loading state
+                            const btn = event.target;
+                            const originalText = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Locating...';
+                            btn.disabled = true;
+                            
+                            // Use reverse geocoding to get ZIP code
+                            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                            const data = await response.json();
+                            
+                            if (data.postcode) {
+                                document.getElementById('zipInput').value = data.postcode;
+                                // Auto submit form
+                                document.getElementById('zipForm').submit();
+                            } else {
+                            }
+                            
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        } catch (error) {
+                            console.error('Error getting location details:', error);
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }
+                    },
+                    function(error) {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                break;
+                            case error.TIMEOUT:
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                );
+            } else {
+            }
+        }
+        
+        // Global function to update navbar counters
+        window.updateNavbarCounts = function(data) {
+            if (!data) return;
+            
+            // Update cart counters
+            if (data.cart_count !== undefined) {
+                const cartCountElements = document.querySelectorAll('#cart-count, #mobile-cart-count, #mobile-top-cart-count');
+                cartCountElements.forEach(element => {
+                    if (element) {
+                        element.textContent = data.cart_count;
+                        element.style.display = data.cart_count > 0 ? 'inline' : 'none';
+                    }
+                });
+            }
+            
+            // Update wishlist counters  
+            if (data.wishlist_count !== undefined) {
+                const wishlistCountElements = document.querySelectorAll('#wishlist-count, #mobile-wishlist-count, #mobile-top-wishlist-count');
+                wishlistCountElements.forEach(element => {
+                    if (element) {
+                        element.textContent = data.wishlist_count;
+                        element.style.display = data.wishlist_count > 0 ? 'inline' : 'none';
+                    }
+                });
+            }
+        };
+
+        // Handle mobile profile dropdown positioning
+        document.addEventListener('DOMContentLoaded', function() {
+            // Simple function to toggle dropdown visibility
+            function toggleDropdown(btnId, menuId) {
+                const profileBtn = document.getElementById(btnId);
+                const profileMenu = document.getElementById(menuId);
+                
+                if (profileBtn && profileMenu) {
+                    profileBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Close all other dropdowns first
+                        document.querySelectorAll('.profile-dropdown').forEach(menu => {
+                            if (menu !== profileMenu) {
+                                menu.style.display = 'none';
+                                menu.classList.remove('show');
+                            }
+                        });
+                        
+                        // Toggle current dropdown
+                        const isVisible = profileMenu.style.display === 'block';
+                        
+                        if (isVisible) {
+                            // Hide dropdown
+                            profileMenu.style.display = 'none';
+                            profileMenu.classList.remove('show');
+                            document.body.style.overflow = '';
+                        } else {
+                            // Show dropdown
+                            profileMenu.style.cssText = `
+                                display: block !important;
+                                position: fixed !important;
+                                bottom: 80px !important;
+                                left: 50% !important;
+                                transform: translateX(-50%) !important;
+                                z-index: 10000 !important;
+                                max-width: 320px !important;
+                                width: calc(100vw - 40px) !important;
+                                background-color: white !important;
+                                border: 1px solid #e0e0e0 !important;
+                                border-radius: 12px !important;
+                                box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+                                padding: 1rem 0 !important;
+                                opacity: 1 !important;
+                                visibility: visible !important;
+                            `;
+                            
+                            profileMenu.classList.add('show');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    });
+                    
+                    // Close when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+                            profileMenu.style.display = 'none';
+                            profileMenu.classList.remove('show');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
+            }
+            
+            // Setup all dropdowns
+            toggleDropdown('profileDropdownBtnDelivery', 'profileDropdownMenuDelivery');
+            toggleDropdown('profileDropdownBtnStore', 'profileDropdownMenuStore');
+            toggleDropdown('profileDropdownBtn', 'profileDropdownMenu');
+        });
+    </script>
+    
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

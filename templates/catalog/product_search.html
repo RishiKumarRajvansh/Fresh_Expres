@@ -1,0 +1,127 @@
+{% extends "base_mobile.html" %}
+{% load static %}
+
+{% block title %}Search Results{% if search_query %} for "{{ search_query }}"{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Search Results Header -->
+<div class="container-fluid px-2 py-3">
+    <div class="d-flex align-items-center mb-3">
+        <h5 class="mb-0 me-2">
+            {% if search_query %}
+                Search results for "{{ search_query }}"
+            {% else %}
+                All Products
+            {% endif %}
+        </h5>
+        <span class="badge bg-secondary">{{ products|length }} product{{ products|pluralize }}</span>
+    </div>
+
+    {% if not products %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No products found</h5>
+            {% if search_query %}
+                <p class="text-muted">Try different keywords or browse our categories</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Products Grid -->
+        <div class="row g-2" id="product-grid">
+            {% for store_product in products %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card product-card border-0 shadow-sm h-100">
+                        <!-- Product Image -->
+                        <div class="position-relative">
+                            <img src="{{ store_product.product.image.url }}" 
+                                 class="card-img-top" 
+                                 alt="{{ store_product.product.name }}"
+                                 style="height: 120px; object-fit: cover;">
+                            
+                            <!-- Wishlist Button (Left Corner) -->
+                            <button class="wishlist-btn position-absolute top-0 start-0 m-2" 
+                                    data-product-id="{{ store_product.product.id }}"
+                                    style="border: none; background: rgba(255,255,255,0.8); border-radius: 50%; width: 32px; height: 32px;">
+                                <i class="fas fa-heart text-danger"></i>
+                            </button>
+
+                            {% if store_product.discount_percentage %}
+                                <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                                    -{{ store_product.discount_percentage }}%
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body p-2">
+                            <!-- Product Name -->
+                            <h6 class="card-title text-truncate mb-1" style="font-size: 0.9rem;">
+                                <a href="{% url 'catalog:product_detail' store_product.product.slug %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ store_product.product.name }}
+                                </a>
+                            </h6>
+
+                            <!-- Price -->
+                            <div class="mb-2">
+                                {% if store_product.discounted_price and store_product.discounted_price != store_product.price %}
+                                    <span class="fw-bold text-success" style="font-size: 0.9rem;">₹{{ store_product.discounted_price }}</span>
+                                    <small class="text-muted text-decoration-line-through ms-1">₹{{ store_product.price }}</small>
+                                {% else %}
+                                    <span class="fw-bold text-success" style="font-size: 0.9rem;">₹{{ store_product.price }}</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Quantity Controls -->
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="quantity-controls d-flex align-items-center border rounded">
+                                    <button class="btn btn-sm qty-decrease" style="border: none; padding: 0.2rem 0.4rem;">-</button>
+                                    <input type="number" class="form-control form-control-sm qty-input text-center" 
+                                           value="1" min="1" max="5" style="border: none; width: 40px; box-shadow: none;">
+                                    <button class="btn btn-sm qty-increase" style="border: none; padding: 0.2rem 0.4rem;">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Add to Cart Button -->
+                            <button class="btn btn-primary btn-sm w-100 add-to-cart-btn"
+                                    data-store-product-id="{{ store_product.id }}"
+                                    style="font-size: 0.8rem; padding: 0.4rem;">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <nav aria-label="Search pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

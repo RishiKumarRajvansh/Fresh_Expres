@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ dashboard_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --dashboard-primary: #2C5F2D;
+    --dashboard-success: #4CAF50;
+    --dashboard-warning: #FF9800;
+    --dashboard-danger: #F44336;
+    --dashboard-info: #2196F3;
+    --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --border-radius: 12px;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-success) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border-left: 4px solid var(--dashboard-primary);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.warning {
+    border-left-color: var(--dashboard-warning);
+}
+
+.stat-card.danger {
+    border-left-color: var(--dashboard-danger);
+}
+
+.stat-card.info {
+    border-left-color: var(--dashboard-info);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--dashboard-primary);
+    color: white;
+}
+
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--dashboard-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #666;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.section-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: var(--dashboard-primary);
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action-btn {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--dashboard-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quick-action-btn:hover {
+    border-color: var(--dashboard-primary);
+    color: var(--dashboard-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow);
+    text-decoration: none;
+}
+
+.action-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--dashboard-primary);
+    transition: all 0.3s ease;
+}
+
+.quick-action-btn:hover .action-icon {
+    background: var(--dashboard-primary);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem 1rem;
+        text-align: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">{{ dashboard_title }}</h1>
+                <p class="mb-0 opacity-75">
+                    {% now "l, F d, Y" %} • 
+                    {% if user_type == 'customer' %}
+                        Your personalized shopping dashboard
+                    {% elif user_type == 'admin' %}
+                        System overview and management
+                    {% elif user_type == 'store_owner' %}
+                        Store management and analytics
+                    {% elif user_type == 'delivery_agent' %}
+                        Your delivery assignments and earnings
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+                    {% block header_actions %}
+                    <!-- Subclass can override this -->
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block dashboard_content %}
+    <!-- This will be overridden by specific dashboard types -->
+    <div class="row">
+        <div class="col-12">
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-info-circle me-2"></i>Dashboard Content
+                </div>
+                <div class="section-body">
+                    <p>This is the base dashboard template. Specific user type dashboards will extend this.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block dashboard_footer %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="text-center text-muted">
+                <small>
+                    <i class="fas fa-clock me-1"></i>
+                    Last updated: {% now "M d, Y g:i A" %}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh dashboard every 5 minutes
+setTimeout(function() {
+    window.location.reload();
+}, 300000);
+
+// Add smooth scrolling for internal links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,916 @@
+{% extends 'stores/base.html' %}
+{% load static %}
+
+{% block title %}Store Dashboard - {{ store.name }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+    --store-primary: #2C5F2D;
+    --store-success: #4CAF50;
+    --store-warning: #FF9800;
+    --store-danger: #F44336;
+    --store-info: #2196F3;
+    --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --border-radius: 12px;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, var(--store-primary) 0%, var(--store-success) 100%);
+    color: white;
+    padding: 2rem 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.urgent {
+    border-color: var(--store-danger);
+}
+
+.stat-card.warning {
+    border-color: var(--store-warning);
+}
+
+.stat-card.success {
+    border-color: var(--store-success);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--store-primary);
+}
+
+.stat-label {
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.stat-change.positive {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--store-success);
+}
+
+.stat-change.negative {
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--store-danger);
+}
+
+.section-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--store-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-body {
+    padding: 1.5rem;
+}
+
+.order-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.order-card:hover {
+    border-color: var(--store-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.order-id {
+    font-weight: 600;
+    color: var(--store-primary);
+}
+
+.order-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-pending { background: #FFF3CD; color: #856404; }
+.status-confirmed { background: #D1ECF1; color: #0C5460; }
+.status-preparing { background: #D4EDDA; color: #155724; }
+.status-ready_for_pickup { background: #CCE5FF; color: #004085; }
+.status-out_for_delivery { background: #E2E3E5; color: #383D41; }
+.status-delivered { background: #D4EDDA; color: #155724; }
+.status-cancelled { background: #F8D7DA; color: #721C24; }
+
+.order-details {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.order-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action.primary {
+    background: var(--store-primary);
+    color: white;
+}
+
+.btn-action.success {
+    background: var(--store-success);
+    color: white;
+}
+
+.btn-action.warning {
+    background: var(--store-warning);
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    text-decoration: none;
+    color: var(--store-primary);
+    transition: all 0.2s ease;
+}
+
+.quick-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    color: var(--store-primary);
+}
+
+.action-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--store-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--store-danger);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.low-stock-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid #ffeb3b;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 235, 59, 0.1);
+}
+
+.low-stock-name {
+    font-weight: 500;
+    color: var(--store-primary);
+}
+
+.low-stock-quantity {
+    background: var(--store-warning);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.agent-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.agent-card {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: white;
+}
+
+.agent-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--store-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 0.5rem;
+}
+
+.agent-name {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.agent-status {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Real-time updates */
+.new-order-notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: var(--store-success);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .order-actions {
+        flex-wrap: wrap;
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block store_content %}
+<div class="container-fluid py-3">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1 class="h3 mb-2">{{ store.name }} Dashboard</h1>
+        <p class="mb-0">Store Code: {{ store.store_code }} • Status: 
+            <span class="badge bg-success">{{ store.get_status_display }}</span>
+        </p>
+        <small class="d-block mt-1">Last updated: <span id="last-updated">{{ store.updated_at|date:"M d, Y g:i A" }}</span></small>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+        <!-- Today's Orders -->
+        <div class="stat-card {% if stats.pending_orders > 0 %}urgent{% endif %}">
+            <div class="stat-icon" style="background: var(--store-info);">
+                <i class="fas fa-shopping-cart"></i>
+                {% if stats.pending_orders > 0 %}
+                    <span class="notification-badge">{{ stats.pending_orders }}</span>
+                {% endif %}
+            </div>
+            <div class="stat-number" id="todays-orders">{{ stats.todays_orders }}</div>
+            <div class="stat-label">Today's Orders</div>
+            <div class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> Active
+            </div>
+        </div>
+
+        <!-- Pending Orders (High Priority) -->
+        <div class="stat-card urgent">
+            <div class="stat-icon" style="background: var(--store-danger);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-number pulse" id="pending-orders">{{ stats.pending_orders }}</div>
+            <div class="stat-label">Pending Orders</div>
+            <div class="stat-change negative">
+                <i class="fas fa-exclamation"></i> Needs Attention
+            </div>
+        </div>
+
+        <!-- Today's Revenue -->
+        <div class="stat-card success">
+            <div class="stat-icon" style="background: var(--store-success);">
+                <i class="fas fa-rupee-sign"></i>
+            </div>
+            <div class="stat-number">₹{{ stats.todays_revenue|floatformat:0 }}</div>
+            <div class="stat-label">Today's Revenue</div>
+            <div class="stat-change positive">
+                <i class="fas fa-trending-up"></i> Growing
+            </div>
+        </div>
+
+        <!-- Low Stock Alert -->
+        <div class="stat-card warning">
+            <div class="stat-icon" style="background: var(--store-warning);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-number">{{ stats.low_stock_count }}</div>
+            <div class="stat-label">Low Stock Items</div>
+            {% if stats.low_stock_count > 0 %}
+                <div class="stat-change negative">
+                    <i class="fas fa-arrow-down"></i> Restock Needed
+                </div>
+            {% else %}
+                <div class="stat-change positive">
+                    <i class="fas fa-check"></i> All Good
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <a href="{% url 'stores:orders' %}" class="quick-action">
+            <div class="action-icon">
+                <i class="fas fa-list-alt"></i>
+                {% if stats.pending_orders > 0 %}
+                    <span class="notification-badge">{{ stats.pending_orders }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <div class="fw-bold">Manage Orders</div>
+                <small class="text-muted">View and update order status</small>
+            </div>
+        </a>
+
+        <a href="{% url 'stores:inventory_management' %}" class="quick-action">
+            <div class="action-icon">
+                <i class="fas fa-boxes"></i>
+                {% if stats.low_stock_count > 0 %}
+                    <span class="notification-badge">{{ stats.low_stock_count }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <div class="fw-bold">Inventory</div>
+                <small class="text-muted">Manage stock levels</small>
+            </div>
+        </a>
+
+        <a href="{% url 'stores:delivery_agents' %}" class="quick-action">
+            <div class="action-icon">
+                <i class="fas fa-motorcycle"></i>
+            </div>
+            <div>
+                <div class="fw-bold">Delivery Agents</div>
+                <small class="text-muted">{{ stats.available_agents }} available</small>
+            </div>
+        </a>
+
+
+
+        <a href="{% url 'stores:manage_zip_coverage' %}" class="quick-action">
+            <div class="action-icon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div>
+                <div class="fw-bold">ZIP Coverage</div>
+                <small class="text-muted">Manage delivery areas</small>
+            </div>
+        </a>
+
+        <a href="#" class="quick-action" onclick="toggleStoreStatus()">
+            <div class="action-icon">
+                <i class="fas fa-power-off"></i>
+            </div>
+            <div>
+                <div class="fw-bold">Store Status</div>
+                <small class="text-muted">Currently {{ store.get_status_display|lower }}</small>
+            </div>
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Pending Orders Section -->
+        <div class="col-lg-8">
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                        Pending Orders (Immediate Action Required)
+                    </div>
+                    <a href="{% url 'stores:orders' %}?status=pending" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="section-body">
+                    {% if pending_orders %}
+                        {% for order in pending_orders %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-id">Order #{{ order.id }}</span>
+                                <span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span>
+                            </div>
+                            <div class="order-details">
+                                <div>
+                                    <i class="fas fa-user me-2"></i>{{ order.user.get_full_name|default:order.user.username }}
+                                </div>
+                                <div>
+                                    <i class="fas fa-clock me-2"></i>{{ order.created_at|timesince }} ago
+                                </div>
+                                <div>
+                                    <i class="fas fa-rupee-sign me-2"></i>₹{{ order.total_amount }}
+                                    <span class="ms-2 text-muted">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+                                </div>
+                            </div>
+                            <div class="order-actions">
+                                <button class="btn-action success" onclick="updateOrderStatus('{{ order.order_number }}', 'confirmed')">
+                                    <i class="fas fa-check me-1"></i>Confirm
+                                </button>
+                                <a href="{% url 'stores:order_detail' order.order_number %}" class="btn-action primary">
+                                    <i class="fas fa-eye me-1"></i>Details
+                                </a>
+                                <button class="btn-action warning" onclick="updateOrderStatus('{{ order.order_number }}', 'cancelled')">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-success">No Pending Orders!</h5>
+                            <p class="text-muted">All orders are being processed smoothly.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="col-lg-4">
+            <!-- Low Stock Alert -->
+            {% if low_stock_products %}
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Low Stock Alert
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% for product in low_stock_products %}
+                    <div class="low-stock-item">
+                        <div>
+                            <div class="low-stock-name">{{ product.product.name }}</div>
+                            <small class="text-muted">{{ product.product.category.name }}</small>
+                        </div>
+                        <div class="low-stock-quantity">{{ product.stock_quantity }} left</div>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'stores:inventory_management' %}?stock=low" class="btn btn-sm btn-warning">
+                            <i class="fas fa-boxes me-1"></i>Update Stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Available Delivery Agents -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-motorcycle text-info"></i>
+                        Available Agents ({{ stats.available_agents }})
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% if available_agents %}
+                        <div class="agent-list">
+                            {% for agent in available_agents %}
+                            <div class="agent-card">
+                                <div class="agent-avatar">
+                                    {{ agent.user.first_name|slice:":1" }}{{ agent.user.last_name|slice:":1" }}
+                                </div>
+                                <div class="agent-name">{{ agent.user.get_full_name }}</div>
+                                <div class="agent-status">
+                                    <span class="badge bg-success">Available</span>
+                                </div>
+                                <small class="text-muted d-block">{{ agent.current_orders_count }} active orders</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-motorcycle text-muted" style="font-size: 2rem;"></i>
+                            <p class="mt-2 text-muted">No agents available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-history text-secondary"></i>
+                        Recent Orders
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% if recent_orders %}
+                        {% for order in recent_orders|slice:":5" %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div>
+                                <div class="fw-bold">#{{ order.id }}</div>
+                                <small class="text-muted">{{ order.created_at|timesince }} ago</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">₹{{ order.total_amount }}</div>
+                                <span class="badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">No recent orders</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Order Notification Template (Hidden) -->
+<div id="new-order-template" class="d-none">
+    <div class="new-order-notification">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-bell me-2"></i>
+            <div>
+                <div class="fw-bold">New Order Received!</div>
+                <div class="small">Order #<span class="order-id"></span> - ₹<span class="order-amount"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Real-time order updates
+let lastOrderCheck = new Date();
+const POLL_INTERVAL = 30000; // 30 seconds
+
+function checkNewOrders() {
+    fetch('{% url "stores:new_orders_count" %}', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update pending orders count
+            document.getElementById('pending-orders').textContent = data.pending_orders;
+            
+            // Show notification for new orders
+            if (data.new_orders > 0) {
+                showNewOrderNotification(data.new_orders);
+                // Play notification sound
+                playNotificationSound();
+            }
+            
+            // Update timestamp
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        }
+    })
+    .catch(error => console.error('Error checking new orders:', error));
+}
+
+function showNewOrderNotification(count) {
+    const template = document.getElementById('new-order-template');
+    const notification = template.cloneNode(true);
+    notification.classList.remove('d-none');
+    notification.id = 'notification-' + Date.now();
+    
+    // Update notification content
+    notification.querySelector('.small').textContent = `${count} new order${count > 1 ? 's' : ''} received`;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+    
+    // Make notification clickable to go to orders
+    notification.addEventListener('click', () => {
+        window.location.href = '{% url "stores:orders" %}?status=pending';
+    });
+}
+
+function playNotificationSound() {
+    // Create audio element for notification sound
+    const audio = new Audio('/static/sounds/notification.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log('Audio play failed:', e));
+}
+
+function updateOrderStatus(orderNumber, status) {
+    if (confirm(`Are you sure you want to ${status} this order?`)) {
+        // Helper to read cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = (csrfEl && csrfEl.value) || getCookie('csrftoken') || '{{ csrf_token }}';
+
+        fetch(`{% url "stores:update_order_status" "PLACEHOLDER" %}`.replace('PLACEHOLDER', orderNumber), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh page after 1 second
+                setTimeout(() => location.reload(), 1000);
+            } else {
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+function toggleStoreStatus() {
+    const currentStatus = '{{ store.status }}';
+    const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+    
+    if (confirm(`Are you sure you want to ${newStatus === 'open' ? 'open' : 'close'} the store?`)) {
+        // Determine CSRF token: prefer hidden input, fall back to cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrfTokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfTokenEl ? csrfTokenEl.value : getCookie('csrftoken');
+
+        fetch('{% url "stores:toggle_store_status" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the page to update the UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast show position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+
+    const bgColor = type === 'success' ? 'bg-success' : 
+                   type === 'error' ? 'bg-danger' : 
+                   type === 'warning' ? 'bg-warning' : 'bg-info';
+
+    toast.innerHTML = `
+        <div class="toast-header ${bgColor} text-white">
+            <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Initialize real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for new orders immediately
+    checkNewOrders();
+    
+    // Set up periodic checking
+    setInterval(checkNewOrders, POLL_INTERVAL);
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
+    // Add CSRF token to all forms
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrfToken) {
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = 'csrfmiddlewaretoken';
+        token.value = '{{ csrf_token }}';
+        document.body.appendChild(token);
+    }
+});
+
+// Handle page visibility change to check orders when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        checkNewOrders();
+    }
+});
+</script>
+{% endblock %}

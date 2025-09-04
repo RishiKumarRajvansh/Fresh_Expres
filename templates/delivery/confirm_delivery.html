@@ -1,0 +1,363 @@
+{% extends 'delivery/base.html' %}
+{% load static %}
+
+{% block title %}Confirm Delivery{% endblock %}
+
+{% block extra_css %}
+<style>
+.delivery-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.delivery-box {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.code-input {
+    background: #f8f9fa;
+    border: 3px solid #007bff;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.2em;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.code-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    border-color: #0056b3;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+}
+
+.delivery-info {
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.assignment-select {
+    margin-bottom: 20px;
+}
+
+.result-message {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    display: none;
+}
+
+.result-message.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.result-message.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+}
+
+.step.active {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.step.active .step-number {
+    background: #007bff;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delivery-container">
+    <div class="delivery-box">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step">
+                <div class="step-number">1</div>
+                <span>QR Scanned</span>
+            </div>
+            <div class="mx-3">→</div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <span>Confirm Delivery</span>
+            </div>
+            <div class="mx-3">→</div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <span>Complete</span>
+            </div>
+        </div>
+        
+        <div class="text-center">
+            <h2>
+                <i class="fas fa-clipboard-check me-2"></i>
+                Confirm Delivery
+            </h2>
+            <p class="text-muted">Ask the customer for their unique delivery confirmation code</p>
+        </div>
+        
+        <!-- Assignment Selection -->
+        <div class="assignment-select">
+            <label for="assignmentSelect" class="form-label">Select Order to Deliver:</label>
+            <select class="form-select" id="assignmentSelect">
+                <option value="">Choose an order...</option>
+                <!-- Orders will be loaded dynamically -->
+            </select>
+        </div>
+        
+        <!-- Delivery Info -->
+        <div class="delivery-info" id="deliveryInfo" style="display: none;">
+            <h6>Delivery Details</h6>
+            <div id="deliveryDetails">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Code Input -->
+        <div class="text-center">
+            <label for="deliveryCode" class="form-label">Customer's Delivery Code:</label>
+            <input type="text" class="form-control code-input" id="deliveryCode" 
+                   placeholder="XXXXXXXX" maxlength="8" disabled>
+            
+            <button type="button" class="btn btn-confirm" id="confirmBtn" disabled>
+                <i class="fas fa-check me-2"></i>Confirm Delivery
+            </button>
+        </div>
+        
+        <!-- Result Message -->
+        <div id="resultMessage" class="result-message">
+            <div id="resultContent"></div>
+        </div>
+        
+        <!-- Instructions -->
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    const deliveryInfo = document.getElementById('deliveryInfo');
+    const deliveryDetails = document.getElementById('deliveryDetails');
+    const deliveryCode = document.getElementById('deliveryCode');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const resultMessage = document.getElementById('resultMessage');
+    const resultContent = document.getElementById('resultContent');
+    
+    // Load agent's picked up orders
+    loadPickedUpOrders();
+    
+    // Assignment selection change
+    assignmentSelect.addEventListener('change', function() {
+        if (this.value) {
+            loadOrderDetails(this.value);
+            deliveryCode.disabled = false;
+            confirmBtn.disabled = false;
+        } else {
+            deliveryInfo.style.display = 'none';
+            deliveryCode.disabled = true;
+            confirmBtn.disabled = true;
+        }
+    });
+    
+    // Auto-format code input
+    deliveryCode.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+        if (this.value.length === 8) {
+            confirmBtn.focus();
+        }
+    });
+    
+    // Confirm delivery
+    confirmBtn.addEventListener('click', function() {
+        const assignmentId = assignmentSelect.value;
+        const code = deliveryCode.value.trim();
+        
+        if (!assignmentId) {
+            showResult('error', 'Please select an order');
+            return;
+        }
+        
+        if (!code || code.length !== 8) {
+            showResult('error', 'Please enter the 8-character delivery code');
+            return;
+        }
+        
+        confirmDelivery(assignmentId, code);
+    });
+    
+    // Enter key support
+    deliveryCode.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.value.length === 8) {
+            confirmBtn.click();
+        }
+    });
+});
+
+function loadPickedUpOrders() {
+    // In a real implementation, this would fetch from an API
+    // For now, we'll simulate some data
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    
+    // This would be an AJAX call to get agent's picked up orders
+    fetch('{% url "delivery:agent_orders" %}', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Populate dropdown with picked up orders
+        if (data.success && data.orders) {
+            data.orders.forEach(order => {
+                if (order.status === 'picked_up') {
+                    const option = document.createElement('option');
+                    option.value = order.assignment_id;
+                    option.textContent = `${order.order_number} - ${order.customer_name}`;
+                    assignmentSelect.appendChild(option);
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading orders:', error);
+    });
+}
+
+function loadOrderDetails(assignmentId) {
+    const deliveryInfo = document.getElementById('deliveryInfo');
+    const deliveryDetails = document.getElementById('deliveryDetails');
+    
+    // Show loading state
+    deliveryDetails.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    deliveryInfo.style.display = 'block';
+    
+    // This would fetch order details
+    // For now, we'll show placeholder content
+    setTimeout(() => {
+        deliveryDetails.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Order Number:</strong> <span id="orderNumber">Loading...</span></p>
+                    <p><strong>Customer:</strong> <span id="customerName">Loading...</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Address:</strong> <span id="customerAddress">Loading...</span></p>
+                    <p><strong>Phone:</strong> <span id="customerPhone">Loading...</span></p>
+                </div>
+            </div>
+        `;
+    }, 500);
+}
+
+function confirmDelivery(assignmentId, deliveryCode) {
+    showResult('info', 'Confirming delivery...');
+    
+    fetch('{% url "delivery:confirm_delivery" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            assignment_id: assignmentId,
+            delivery_code: deliveryCode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showResult('success', data.message);
+            
+            // Update UI
+            document.getElementById('confirmBtn').innerHTML = '<i class="fas fa-check me-2"></i>Delivered!';
+            document.getElementById('confirmBtn').disabled = true;
+            document.getElementById('deliveryCode').disabled = true;
+            document.getElementById('assignmentSelect').disabled = true;
+            
+            // Show completion step
+            document.querySelectorAll('.step').forEach((step, index) => {
+                if (index === 2) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+            
+            // Redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = '{% url "delivery:agent_dashboard" %}';
+            }, 3000);
+        } else {
+            showResult('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showResult('error', 'Error confirming delivery. Please try again.');
+    });
+}
+
+function showResult(type, message) {
+    const resultMessage = document.getElementById('resultMessage');
+    const resultContent = document.getElementById('resultContent');
+    
+    resultMessage.className = `result-message ${type}`;
+    resultContent.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${message}
+    `;
+    resultMessage.style.display = 'block';
+}
+</script>
+{% endblock %}
