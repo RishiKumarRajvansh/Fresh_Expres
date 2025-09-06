@@ -8,6 +8,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.contrib import messages
+from django.db.models import Avg
 import logging
 import json
 from decimal import Decimal
@@ -771,8 +773,121 @@ class ReorderView(LoginRequiredMixin, TemplateView):
         except Order.DoesNotExist:
             return redirect('orders:order_list')
 
-class RateOrderView(LoginRequiredMixin, FormView):
-    template_name = 'orders/rate_order.html'
+class RateOrderView(LoginRequiredMixin, View):
+    template_name = 'orders/rate_delivery.html'
+    
+    def get(self, request, *args, **kwargs):
+        order_number = kwargs.get('order_number')
+        
+        try:
+            order = Order.objects.select_related('store').get(
+                order_number=order_number,
+                user=request.user
+            )
+            
+            # Check if order is delivered
+            if order.status != 'delivered':
+                messages.warning(request, "You can only rate orders that have been delivered.")
+                return redirect('orders:order_detail', order_number=order_number)
+            
+            # Check if order already has a rating
+            try:
+                # Import here to avoid circular imports
+                from delivery.models import DeliveryRating
+                rating = DeliveryRating.objects.get(order=order)
+                messages.info(request, "You have already rated this delivery.")
+                return redirect('orders:order_detail', order_number=order_number)
+            except ImportError:
+                messages.error(request, "Rating module is not available.")
+                return redirect('orders:order_detail', order_number=order_number)
+            except DeliveryRating.DoesNotExist:
+                # Rating doesn't exist yet, proceed with the form
+                pass
+            
+            # Get delivery assignment
+            try:
+                # Import here to avoid circular imports
+                from delivery.models import DeliveryAssignment
+                assignment = DeliveryAssignment.objects.select_related('agent').get(order=order)
+                context = {
+                    'order': order,
+                    'delivery_agent': assignment.agent
+                }
+                return render(request, self.template_name, context)
+            except ImportError:
+                messages.error(request, "Delivery module is not available.")
+                return redirect('orders:order_detail', order_number=order_number)
+            except DeliveryAssignment.DoesNotExist:
+                messages.error(request, "No delivery agent was assigned to this order.")
+                return redirect('orders:order_detail', order_number=order_number)
+                
+        except Order.DoesNotExist:
+            raise Http404("Order not found")
+    
+    def post(self, request, *args, **kwargs):
+        order_number = kwargs.get('order_number')
+        
+        try:
+            order = Order.objects.get(order_number=order_number, user=request.user)
+            
+            # Check if order is delivered
+            if order.status != 'delivered':
+                messages.warning(request, "You can only rate orders that have been delivered.")
+                return redirect('orders:order_detail', order_number=order_number)
+            
+            # Get delivery assignment
+            try:
+                # Import here to avoid circular imports
+                from delivery.models import DeliveryAssignment, DeliveryRating
+                assignment = DeliveryAssignment.objects.select_related('agent').get(order=order)
+                
+                # Check if already rated
+                if DeliveryRating.objects.filter(order=order).exists():
+                    messages.info(request, "You have already rated this delivery.")
+                    return redirect('orders:order_detail', order_number=order_number)
+                
+                # Create rating
+                overall_rating = int(request.POST.get('overall_rating', 0))
+                delivery_time_rating = int(request.POST.get('delivery_time_rating', 0))
+                packaging_rating = int(request.POST.get('packaging_rating', 0))
+                agent_behavior_rating = int(request.POST.get('agent_behavior_rating', 0))
+                feedback = request.POST.get('feedback', '')
+                
+                if overall_rating < 1 or overall_rating > 5:
+                    messages.error(request, "Please provide a valid overall rating between 1 and 5.")
+                    return redirect('orders:rate_order', order_number=order_number)
+                
+                # Create rating
+                rating = DeliveryRating.objects.create(
+                    order=order,
+                    agent=assignment.agent,
+                    customer=request.user,
+                    overall_rating=overall_rating,
+                    delivery_time_rating=delivery_time_rating or overall_rating,
+                    packaging_rating=packaging_rating or overall_rating,
+                    agent_behavior_rating=agent_behavior_rating or overall_rating,
+                    feedback=feedback
+                )
+                
+                # Update agent's average rating
+                agent = assignment.agent
+                all_ratings = DeliveryRating.objects.filter(agent=agent)
+                avg_rating = all_ratings.aggregate(Avg('overall_rating'))['overall_rating__avg']
+                agent.average_rating = round(avg_rating, 2)
+                agent.save()
+                
+                messages.success(request, "Thank you for rating your delivery experience!")
+                return redirect('orders:order_detail', order_number=order_number)
+            
+            except ImportError:
+                messages.error(request, "Delivery module is not available.")
+                return redirect('orders:order_detail', order_number=order_number)
+            except DeliveryAssignment.DoesNotExist:
+                messages.error(request, "No delivery agent was assigned to this order.")
+                return redirect('orders:order_detail', order_number=order_number)
+                
+        except Order.DoesNotExist:
+            raise Http404("Order not found")
 
 class FileComplaintView(LoginRequiredMixin, FormView):
     template_name = 'orders/file_complaint.html'

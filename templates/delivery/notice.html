@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delivery System Updated</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .alert {
+            background-color: #fff3cd;
+            border: 1px solid #ffecb5;
+            color: #664d03;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #0d6efd;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delivery System Updated</h1>
+        
+        <div class="alert">
+            <strong>Notice:</strong> The delivery system has been updated to a new version with improved features.
+        </div>
+        
+        <p>The old delivery system has been replaced with a new, improved version.</p>
+        <p>Please use the new delivery dashboard for all delivery operations.</p>
+        
+        <a href="{% url 'delivery_new:dashboard' %}" class="btn">Go to New Dashboard</a>
+    </div>
+</body>
+</html>

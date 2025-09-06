@@ -1,0 +1,298 @@
+{% extends 'delivery_new/delivery_base.html' %}
+{% load static %}
+{% load delivery_filters %}
+
+{% block title %}Delivery Agent Dashboard{% endblock %}
+
+{% block delivery_content %}
+<div class="py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">Delivery Dashboard</h1>
+            <p class="text-muted">Welcome back, {{ agent.name }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="form-check form-switch d-inline-block me-3">
+                <input class="form-check-input" type="checkbox" id="availabilityToggle" 
+                       {% if agent.is_available %}checked{% endif %}>
+                <label class="form-check-label" for="availabilityToggle">
+                    {% if agent.is_available %}Available{% else %}Unavailable{% endif %}
+                </label>
+            </div>
+            <a href="{% url 'delivery:agent_profile' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-user small align-middle"></i> Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ status_counts.all_active }}</h5>
+                    <p class="card-text text-muted mb-0">Active Deliveries</p>
+                    <div class="text-end">
+                        <i class="fas fa-truck text-primary opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'delivery:delivery_list' %}?status=active" class="text-decoration-none">
+                        View all <i class="fas fa-chevron-right small align-middle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">{{ status_counts.assigned }}</h5>
+                    <p class="card-text text-muted mb-0">Pending Acceptance</p>
+                    <div class="text-end">
+                        <i class="fas fa-tasks text-warning opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'delivery:delivery_list' %}?status=pending" class="text-decoration-none">
+                        View all <i class="fas fa-chevron-right small align-middle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-success">{{ today_stats.completed }}</h5>
+                    <p class="card-text text-muted mb-0">Completed Today</p>
+                    <div class="text-end">
+                        <i class="fas fa-check-double text-success opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'delivery:delivery_list' %}?status=completed&date_from={{ today|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+                        View all <i class="fas fa-chevron-right small align-middle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">₹{{ today_stats.earnings|floatformat:2 }}</h5>
+                    <p class="card-text text-muted mb-0">Today's Earnings</p>
+                    <div class="text-end">
+                        <i class="fas fa-rupee-sign text-info opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'delivery:earnings' %}" class="text-decoration-none">
+                        View details <i class="fas fa-chevron-right small align-middle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Deliveries Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Active Deliveries</h5>
+                    <a href="{% url 'delivery:delivery_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_deliveries %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Customer</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for delivery in active_deliveries|slice:":5" %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'delivery:delivery_detail' delivery.pk %}" class="text-decoration-none">
+                                                {{ delivery.delivery_id }}
+                                            </a>
+                                        </td>
+                                        <td>{{ delivery.order.user.get_full_name }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ delivery.get_status_color }}">
+                                                {{ delivery.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ delivery.created_at|date:"M d, h:i A" }}</td>
+                                        <td>
+                                            <a href="{% url 'delivery:delivery_detail' delivery.pk %}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
+                            </div>
+                            <h5>No Active Deliveries</h5>
+                            <p class="text-muted">You don't have any active deliveries at this time.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Stats -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Performance Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Completion Rate</span>
+                            <span>{{ all_time_stats.completion_rate|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ all_time_stats.completion_rate }}%;" 
+                                 aria-valuenow="{{ all_time_stats.completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Average Rating</span>
+                            <span>{{ all_time_stats.average_rating|floatformat:1 }}/5.0</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ all_time_stats.average_rating|floatformat:1|multiply:20 }}%;" 
+                                 aria-valuenow="{{ all_time_stats.average_rating|floatformat:1|multiply:20 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-0">{{ all_time_stats.total_deliveries }}</h6>
+                                <small class="text-muted">Total Deliveries</small>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ all_time_stats.completed }}</h6>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">₹{{ all_time_stats.earnings|floatformat:2 }}</h6>
+                                <small class="text-muted">Total Earnings</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'delivery:earnings' %}" class="btn btn-outline-primary">
+                            View Earnings Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sync availability toggle with the toggles in base.html
+        const dashboardToggle = document.getElementById('availabilityToggle');
+        if (dashboardToggle) {
+            dashboardToggle.addEventListener('change', function() {
+                // Get all toggles from base.html
+                const baseToggles = [
+                    document.getElementById('desktopAvailabilityToggle'),
+                    document.getElementById('mobileAvailabilityToggle'),
+                    document.getElementById('sidebarAvailabilityToggle')
+                ];
+                
+                // Sync the state
+                const isAvailable = this.checked;
+                baseToggles.forEach(function(toggle) {
+                    if (toggle) toggle.checked = isAvailable;
+                });
+                
+                // Update label
+                document.querySelector('label[for="availabilityToggle"]').textContent = 
+                    isAvailable ? 'Available' : 'Unavailable';
+            });
+        }
+        
+        // Sample data for the earnings chart
+        const earningsData = {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Daily Earnings',
+                data: [{{ daily_earnings|default:"150, 220, 180, 250, 300, 280, 220" }}],
+                backgroundColor: 'rgba(63, 81, 181, 0.2)',
+                borderColor: 'rgba(63, 81, 181, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        };
+        
+        // Configure and render the chart
+        const earningsCtx = document.getElementById('earningsChart');
+        if (earningsCtx) {
+            new Chart(earningsCtx.getContext('2d'), {
+                type: 'line',
+                data: earningsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

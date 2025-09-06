@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rate Delivery | Fresh Express{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating-container {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .rating-stars {
+        display: flex;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 1rem 0;
+    }
+    
+    .rating-star {
+        color: #ddd;
+        cursor: pointer;
+        margin: 0 0.5rem;
+        transition: color 0.2s ease;
+    }
+    
+    .rating-star.active {
+        color: #ffc107;
+    }
+    
+    .rating-star:hover {
+        color: #ffdb70;
+    }
+    
+    .rating-categories {
+        width: 100%;
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+    
+    .rating-category {
+        margin-bottom: 1.5rem;
+    }
+    
+    .rating-label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .star-row {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .star-row .rating-star {
+        font-size: 1.5rem;
+    }
+    
+    .delivery-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+    }
+    
+    .agent-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1.5rem;
+    }
+    
+    .agent-info h5 {
+        margin-bottom: 0.2rem;
+    }
+    
+    .feedback-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .btn-submit-rating {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        font-weight: bold;
+        padding: 0.75rem 2rem;
+        border-radius: 30px;
+        margin-top: 1rem;
+    }
+    
+    .btn-submit-rating:hover {
+        background-color: #388e3c;
+        color: white;
+    }
+    
+    .header-section {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .order-summary {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 576px) {
+        .rating-stars {
+            font-size: 2rem;
+        }
+        
+        .star-row .rating-star {
+            font-size: 1.2rem;
+            margin: 0 0.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="header-section">
+        <h2>Rate Your Delivery Experience</h2>
+        <p class="text-muted">Your feedback helps us improve our service</p>
+    </div>
+    
+    <div class="order-summary">
+        <h5>Order #{{ order.order_number }}</h5>
+        <p>From: {{ order.store.name }} | Delivered: {{ order.actual_delivery_time|date:"F j, Y, g:i a" }}</p>
+    </div>
+    
+    <div class="delivery-info">
+        <img src="{{ delivery_agent.profile_photo.url|default:'https://via.placeholder.com/80' }}" alt="Agent Photo" class="agent-photo">
+        <div class="agent-info">
+            <h5>{{ delivery_agent.user.get_full_name }}</h5>
+            <p class="text-muted">{{ delivery_agent.vehicle_type|title }} Delivery</p>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="rating-container">
+            <h4>Overall Experience</h4>
+            <div class="rating-stars">
+                <i class="fas fa-star rating-star" data-rating="1" data-category="overall"></i>
+                <i class="fas fa-star rating-star" data-rating="2" data-category="overall"></i>
+                <i class="fas fa-star rating-star" data-rating="3" data-category="overall"></i>
+                <i class="fas fa-star rating-star" data-rating="4" data-category="overall"></i>
+                <i class="fas fa-star rating-star" data-rating="5" data-category="overall"></i>
+            </div>
+            <input type="hidden" name="overall_rating" id="overall_rating" value="">
+        </div>
+        
+        <div class="rating-categories">
+            <div class="rating-category">
+                <span class="rating-label">Delivery Time</span>
+                <div class="star-row">
+                    <i class="fas fa-star rating-star" data-rating="1" data-category="delivery_time"></i>
+                    <i class="fas fa-star rating-star" data-rating="2" data-category="delivery_time"></i>
+                    <i class="fas fa-star rating-star" data-rating="3" data-category="delivery_time"></i>
+                    <i class="fas fa-star rating-star" data-rating="4" data-category="delivery_time"></i>
+                    <i class="fas fa-star rating-star" data-rating="5" data-category="delivery_time"></i>
+                </div>
+                <input type="hidden" name="delivery_time_rating" id="delivery_time_rating" value="">
+            </div>
+            
+            <div class="rating-category">
+                <span class="rating-label">Packaging Quality</span>
+                <div class="star-row">
+                    <i class="fas fa-star rating-star" data-rating="1" data-category="packaging"></i>
+                    <i class="fas fa-star rating-star" data-rating="2" data-category="packaging"></i>
+                    <i class="fas fa-star rating-star" data-rating="3" data-category="packaging"></i>
+                    <i class="fas fa-star rating-star" data-rating="4" data-category="packaging"></i>
+                    <i class="fas fa-star rating-star" data-rating="5" data-category="packaging"></i>
+                </div>
+                <input type="hidden" name="packaging_rating" id="packaging_rating" value="">
+            </div>
+            
+            <div class="rating-category">
+                <span class="rating-label">Agent Behavior</span>
+                <div class="star-row">
+                    <i class="fas fa-star rating-star" data-rating="1" data-category="agent_behavior"></i>
+                    <i class="fas fa-star rating-star" data-rating="2" data-category="agent_behavior"></i>
+                    <i class="fas fa-star rating-star" data-rating="3" data-category="agent_behavior"></i>
+                    <i class="fas fa-star rating-star" data-rating="4" data-category="agent_behavior"></i>
+                    <i class="fas fa-star rating-star" data-rating="5" data-category="agent_behavior"></i>
+                </div>
+                <input type="hidden" name="agent_behavior_rating" id="agent_behavior_rating" value="">
+            </div>
+        </div>
+        
+        <div class="feedback-container">
+            <div class="form-group">
+                <label for="feedback"><strong>Additional Feedback</strong> (Optional)</label>
+                <textarea class="form-control" id="feedback" name="feedback" rows="4" placeholder="Share your experience with this delivery..."></textarea>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-submit-rating">Submit Rating</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle star ratings
+        const stars = document.querySelectorAll('.rating-star');
+        
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                const category = this.getAttribute('data-category');
+                
+                // Update hidden input
+                const inputId = category === 'overall' ? 'overall_rating' : 
+                                category === 'delivery_time' ? 'delivery_time_rating' :
+                                category === 'packaging' ? 'packaging_rating' : 'agent_behavior_rating';
+                
+                document.getElementById(inputId).value = rating;
+                
+                // Update star display
+                const categoryStars = document.querySelectorAll(`.rating-star[data-category="${category}"]`);
+                categoryStars.forEach(s => {
+                    if (s.getAttribute('data-rating') <= rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Hover effects
+            star.addEventListener('mouseenter', function() {
+                const rating = this.getAttribute('data-rating');
+                const category = this.getAttribute('data-category');
+                
+                const categoryStars = document.querySelectorAll(`.rating-star[data-category="${category}"]`);
+                categoryStars.forEach(s => {
+                    if (s.getAttribute('data-rating') <= rating) {
+                        s.style.color = '#ffdb70';
+                    }
+                });
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                const category = this.getAttribute('data-category');
+                const categoryStars = document.querySelectorAll(`.rating-star[data-category="${category}"]`);
+                
+                categoryStars.forEach(s => {
+                    if (s.classList.contains('active')) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+        });
+        
+        // Form validation before submit
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const overallRating = document.getElementById('overall_rating').value;
+            
+            if (!overallRating) {
+                event.preventDefault();
+                alert('Please provide an overall rating before submitting.');
+            }
+        });
+    });
+</script>
+{% endblock %}

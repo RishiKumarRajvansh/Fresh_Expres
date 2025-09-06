@@ -1,0 +1,118 @@
+{% extends 'delivery_new/delivery_base.html' %}
+{% load static %}
+
+{% block title %}Manage Service Areas - Fresh Express Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Manage Your Service Areas</h5>
+                </div>
+                <div class="card-body">
+                    {% with active_count=0 %}
+                        {% for coverage in agent.zip_coverages.all %}
+                            {% if coverage.is_active %}
+                                {% with active_count=active_count|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if active_count > 0 %}
+                            <div class="alert alert-info mb-4">
+                                <h6 class="alert-heading">Current Service Areas</h6>
+                                <p class="mb-0">
+                                    You currently serve 
+                                    <strong>{{ active_count }}</strong> 
+                                    ZIP code{% if active_count != 1 %}s{% endif %}:
+                                    {% for coverage in agent.zip_coverages.all %}
+                                        {% if coverage.is_active %}
+                                        <span class="badge bg-secondary">{{ coverage.zip_area.zip_code }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mb-4">
+                                <h6 class="alert-heading">No Service Areas Defined</h6>
+                                <p class="mb-0">
+                                    You haven't selected any ZIP codes for your service area yet. 
+                                    You must select at least one ZIP code to be able to go online and accept deliveries.
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <p class="text-muted">
+                                Select the ZIP codes where you're available to make deliveries. 
+                                You can update this list at any time.
+                            </p>
+                        </div>
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <p>Please correct the errors below:</p>
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="zip-area-selection">
+                            <label class="form-label fw-bold">{{ form.zip_areas.label }}</label>
+                            <div class="row">
+                                {% for checkbox in form.zip_areas %}
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <div class="form-check">
+                                            {{ checkbox }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.zip_areas.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.zip_areas.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Service Areas
+                            </button>
+                            <a href="{% url 'delivery_new:agent_profile' %}" class="btn btn-outline-secondary ms-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // Optional: Add a "Select All" button
+        $('.zip-area-selection').prepend(
+            '<div class="mb-3">' +
+            '<button type="button" class="btn btn-sm btn-outline-primary me-2" id="selectAll">Select All</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">Deselect All</button>' +
+            '</div>'
+        );
+        
+        $('#selectAll').click(function() {
+            $('.zip-area-checkbox').prop('checked', true);
+        });
+        
+        $('#deselectAll').click(function() {
+            $('.zip-area-checkbox').prop('checked', false);
+        });
+    });
+</script>
+{% endblock %}

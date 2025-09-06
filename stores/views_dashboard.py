@@ -15,7 +15,7 @@ import json
 
 from .models import Store, StoreProduct
 from orders.models import Order, OrderItem, Cart
-from delivery.models import DeliveryAgent, DeliveryAssignment
+from delivery_new.models import DeliveryAgent, Delivery
 from catalog.models import Product, Category
 from accounts.models import User
 
@@ -202,24 +202,24 @@ def update_order_status(request):
                 agent = DeliveryAgent.objects.get(id=agent_id, store=store)
                 
                 # Create or update delivery assignment
-                assignment, created = DeliveryAssignment.objects.get_or_create(
+                assignment, created = Delivery.objects.get_or_create(
                     order=order,
                     defaults={
-                        'delivery_agent': agent,
+                        'agent': agent,
                         'status': 'assigned',
                         'assigned_at': timezone.now(),
                     }
                 )
                 
                 if not created:
-                    assignment.delivery_agent = agent
+                    assignment.agent = agent
                     assignment.status = 'assigned'
                     assignment.assigned_at = timezone.now()
                     assignment.save()
                 
                 # Update agent availability
-                agent.current_orders_count = DeliveryAssignment.objects.filter(
-                    delivery_agent=agent,
+                agent.current_orders_count = Delivery.objects.filter(
+                    agent=agent,
                     status__in=['assigned', 'accepted', 'picked_up']
                 ).count()
                 agent.save()
@@ -462,9 +462,9 @@ def auto_assign_delivery_agent(order):
             best_agent = available_agents.first()
             
             # Create delivery assignment
-            assignment = DeliveryAssignment.objects.create(
+            assignment = Delivery.objects.create(
                 order=order,
-                delivery_agent=best_agent,
+                agent=best_agent,
                 status='assigned',
                 assigned_at=timezone.now()
             )

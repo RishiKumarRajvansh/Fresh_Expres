@@ -205,35 +205,41 @@ class DeliveryDashboardView(DeliveryAgentRequiredMixin, TemplateView):
         user = self.request.user
         
         # Get delivery agent profile
-        from delivery.models import DeliveryAgent, DeliveryAssignment
+        from delivery_new.models import DeliveryAgent, Delivery
         try:
             agent = DeliveryAgent.objects.get(user=user)
             
             # Agent statistics
             today = timezone.now().date()
             agent_stats = {
-                'total_deliveries': agent.deliveryassignment_set.filter(
+                'total_deliveries': Delivery.objects.filter(
+                    agent=agent,
                     status='delivered'
                 ).count(),
-                'pending_deliveries': agent.deliveryassignment_set.filter(
+                'pending_deliveries': Delivery.objects.filter(
+                    agent=agent,
                     status__in=['assigned', 'picked_up']
                 ).count(),
-                'today_deliveries': agent.deliveryassignment_set.filter(
+                'today_deliveries': Delivery.objects.filter(
+                    agent=agent,
                     assigned_at__date=today
                 ).count(),
                 'is_available': agent.is_available,
-                'total_earnings': agent.deliveryassignment_set.filter(
+                'total_earnings': Delivery.objects.filter(
+                    agent=agent,
                     status='delivered'
                 ).count() * 50,  # Simplified calculation
             }
             
             # Current assignments
-            current_assignments = agent.deliveryassignment_set.filter(
+            current_assignments = Delivery.objects.filter(
+                agent=agent,
                 status__in=['assigned', 'picked_up']
             ).order_by('-assigned_at')[:5]
             
             # Recent deliveries
-            recent_deliveries = agent.deliveryassignment_set.filter(
+            recent_deliveries = Delivery.objects.filter(
+                agent=agent,
                 status='delivered'
             ).order_by('-delivered_at')[:10]
             

@@ -7,19 +7,21 @@
 {{ block.super }}
 <style>
 :root {
-    --store-primary: #2C5F2D;
-    --store-success: #4CAF50;
-    --store-warning: #FF9800;
-    --store-danger: #F44336;
-    --store-info: #2196F3;
+    --dashboard-primary: #2C5F2D;
+    --dashboard-success: #4CAF50;
+    --dashboard-warning: #FF9800;
+    --dashboard-danger: #F44336;
+    --dashboard-info: #2196F3;
     --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
     --border-radius: 12px;
 }
 
+/* Dashboard-specific styles inherit mobile navigation from base template */
+
 .dashboard-header {
-    background: linear-gradient(135deg, var(--store-primary) 0%, var(--store-success) 100%);
+    background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-success) 100%);
     color: white;
-    padding: 2rem 1rem;
+    padding: 2rem;
     border-radius: var(--border-radius);
     margin-bottom: 2rem;
     position: relative;
@@ -40,7 +42,7 @@
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -50,44 +52,56 @@
     padding: 1.5rem;
     border-radius: var(--border-radius);
     box-shadow: var(--card-shadow);
-    border: 2px solid transparent;
+    border-left: 4px solid var(--dashboard-primary);
     transition: all 0.3s ease;
-    position: relative;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.stat-card.urgent {
-    border-color: var(--store-danger);
+    color: inherit;
+    text-decoration: none;
 }
 
 .stat-card.warning {
-    border-color: var(--store-warning);
+    border-left-color: var(--dashboard-warning);
 }
 
-.stat-card.success {
-    border-color: var(--store-success);
+.stat-card.danger {
+    border-left-color: var(--dashboard-danger);
+}
+
+.stat-card.info {
+    border-left-color: var(--dashboard-info);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
 .stat-icon {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    color: white;
 }
 
 .stat-number {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: 700;
+    color: var(--dashboard-primary);
     margin-bottom: 0.5rem;
-    color: var(--store-primary);
 }
 
 .stat-label {
@@ -105,12 +119,12 @@
 
 .stat-change.positive {
     background: rgba(76, 175, 80, 0.1);
-    color: var(--store-success);
+    color: var(--dashboard-success);
 }
 
 .stat-change.negative {
     background: rgba(244, 67, 54, 0.1);
-    color: var(--store-danger);
+    color: var(--dashboard-danger);
 }
 
 .section-card {
@@ -132,7 +146,7 @@
 .section-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--store-primary);
+    color: var(--dashboard-primary);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -140,6 +154,258 @@
 
 .section-body {
     padding: 1.5rem;
+}
+
+/* Mobile responsive adjustments - dashboard specific */
+@media (max-width: 768px) {
+    /* Adjust dashboard-specific mobile layout */
+    .dashboard-header { 
+        margin-top: 0;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    /* Make stats grid more mobile-friendly */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+    }
+    
+    .stat-header {
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    /* Mobile section cards */
+    .section-card {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+    
+    .section-header {
+        padding: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    /* Mobile quick actions */
+    .quick-actions {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quick-action {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .action-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    /* Mobile order cards */
+    .order-card {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .order-actions {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Mobile agent cards */
+    .agent-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .agent-card {
+        padding: 0.75rem;
+    }
+    
+    .agent-avatar {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Mobile low stock items */
+    .low-stock-item {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+    }
+}
+
+/* Desktop styles - ensure proper display on larger screens */
+@media (min-width: 769px) {
+    .store-mobile-nav {
+        display: none !important;
+    }
+    
+    .bottom-nav {
+        display: none !important;
+    }
+    
+    .mobile-sidebar {
+        display: none !important;
+    }
+    
+    /* Ensure main navigation is visible on desktop */
+    .navbar:not(.store-mobile-nav) {
+        display: flex !important;
+    }
+    
+    .store-sidebar {
+        display: block !important;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .stat-number {
+        font-size: 1.3rem;
+    }
+    
+    .stat-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-header {
+        padding: 0.75rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .quick-actions {
+        gap: 0.5rem;
+    }
+    
+    .quick-action {
+        padding: 0.5rem;
+    }
+    
+    .action-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .agent-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .section-header {
+        padding: 0.75rem;
+    }
+    
+    .section-body {
+        padding: 0.75rem;
+    }
+    
+    .order-card {
+        padding: 0.5rem;
+    }
+    
+    .mobile-nav-toggle {
+        padding: 0.5rem;
+    }
+    
+    .sidebar-nav-item {
+        padding: 0.75rem;
+    }
+}
+
+/* Landscape mobile orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+    .dashboard-header {
+        padding: 0.75rem;
+        margin-top: 50px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.5rem;
+    }
+    
+    .stat-number {
+        font-size: 1.2rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    body {
+        padding-bottom: 70px;
+    }
 }
 
 .order-card {
@@ -151,7 +417,7 @@
 }
 
 .order-card:hover {
-    border-color: var(--store-primary);
+    border-color: var(--dashboard-primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
@@ -164,7 +430,7 @@
 
 .order-id {
     font-weight: 600;
-    color: var(--store-primary);
+    color: var(--dashboard-primary);
 }
 
 .order-status {
@@ -205,17 +471,17 @@
 }
 
 .btn-action.primary {
-    background: var(--store-primary);
+    background: var(--dashboard-primary);
     color: white;
 }
 
 .btn-action.success {
-    background: var(--store-success);
+    background: var(--dashboard-success);
     color: white;
 }
 
 .btn-action.warning {
-    background: var(--store-warning);
+    background: var(--dashboard-warning);
     color: white;
 }
 
@@ -240,21 +506,21 @@
     border-radius: var(--border-radius);
     box-shadow: var(--card-shadow);
     text-decoration: none;
-    color: var(--store-primary);
+    color: var(--dashboard-primary);
     transition: all 0.2s ease;
 }
 
 .quick-action:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    color: var(--store-primary);
+    color: var(--dashboard-primary);
 }
 
 .action-icon {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--store-primary);
+    background: var(--dashboard-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -266,7 +532,7 @@
     position: absolute;
     top: -5px;
     right: -5px;
-    background: var(--store-danger);
+    background: var(--dashboard-danger);
     color: white;
     border-radius: 50%;
     width: 20px;
@@ -291,11 +557,11 @@
 
 .low-stock-name {
     font-weight: 500;
-    color: var(--store-primary);
+    color: var(--dashboard-primary);
 }
 
 .low-stock-quantity {
-    background: var(--store-warning);
+    background: var(--dashboard-warning);
     color: white;
     padding: 0.25rem 0.5rem;
     border-radius: 15px;
@@ -321,7 +587,7 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: var(--store-primary);
+    background: var(--dashboard-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -345,7 +611,7 @@
     position: fixed;
     top: 100px;
     right: 20px;
-    background: var(--store-success);
+    background: var(--dashboard-success);
     color: white;
     padding: 1rem;
     border-radius: 8px;
@@ -398,6 +664,52 @@
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+/* Dashboard responsive enhancements */
+
+/* Make stat cards clickable for mobile */
+.stat-card {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.stat-card:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Additional mobile adjustments for dashboard */
+@media (max-width: 768px) {
+    /* Make stats grid more mobile-friendly */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    /* Mobile section cards */
+    .section-card {
+        margin-bottom: 1rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .quick-action-btn {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -415,61 +727,68 @@
     <!-- Statistics Grid -->
     <div class="stats-grid">
         <!-- Today's Orders -->
-        <div class="stat-card {% if stats.pending_orders > 0 %}urgent{% endif %}">
-            <div class="stat-icon" style="background: var(--store-info);">
-                <i class="fas fa-shopping-cart"></i>
+        <a href="{% url 'stores:orders' %}?filter=today" class="stat-card info">
+            <div class="stat-header">
+                <div class="stat-icon" style="background: var(--dashboard-info);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+            <div class="stat-number" id="todays-orders">{{ stats.today_orders|default:0 }}</div>
+            <div class="stat-label">Today's Orders</div>
+            <div class="mt-2">
+                <small class="text-muted">+{{ stats.weekly_orders|default:0 }} this week</small>
+            </div>
+        </a>
+
+        <!-- Pending Orders -->
+        <a href="{% url 'stores:orders' %}?status=pending" class="stat-card warning">
+            <div class="stat-header">
+                <div class="stat-icon" style="background: var(--dashboard-warning);">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-number" id="pending-orders">{{ stats.pending_orders|default:0 }}</div>
+            <div class="stat-label">Pending Orders</div>
+            <div class="mt-2">
                 {% if stats.pending_orders > 0 %}
-                    <span class="notification-badge">{{ stats.pending_orders }}</span>
+                    <small class="text-warning">Need attention</small>
+                {% else %}
+                    <small class="text-success">All caught up</small>
                 {% endif %}
             </div>
-            <div class="stat-number" id="todays-orders">{{ stats.todays_orders }}</div>
-            <div class="stat-label">Today's Orders</div>
-            <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> Active
-            </div>
-        </div>
-
-        <!-- Pending Orders (High Priority) -->
-        <div class="stat-card urgent">
-            <div class="stat-icon" style="background: var(--store-danger);">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-number pulse" id="pending-orders">{{ stats.pending_orders }}</div>
-            <div class="stat-label">Pending Orders</div>
-            <div class="stat-change negative">
-                <i class="fas fa-exclamation"></i> Needs Attention
-            </div>
-        </div>
+        </a>
 
         <!-- Today's Revenue -->
-        <div class="stat-card success">
-            <div class="stat-icon" style="background: var(--store-success);">
-                <i class="fas fa-rupee-sign"></i>
+        <a href="{% url 'stores:dashboard' %}?view=revenue" class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon" style="background: var(--dashboard-success);">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
             </div>
-            <div class="stat-number">₹{{ stats.todays_revenue|floatformat:0 }}</div>
+            <div class="stat-number">₹{{ stats.today_revenue|floatformat:0|default:0 }}</div>
             <div class="stat-label">Today's Revenue</div>
-            <div class="stat-change positive">
-                <i class="fas fa-trending-up"></i> Growing
+            <div class="mt-2">
+                <small class="text-muted">₹{{ stats.weekly_revenue|floatformat:0|default:0 }} this week</small>
             </div>
-        </div>
+        </a>
 
         <!-- Low Stock Alert -->
-        <div class="stat-card warning">
-            <div class="stat-icon" style="background: var(--store-warning);">
-                <i class="fas fa-exclamation-triangle"></i>
+        <a href="{% url 'stores:inventory_management' %}?filter=low_stock" class="stat-card {% if stats.low_stock_count > 5 %}danger{% endif %}">
+            <div class="stat-header">
+                <div class="stat-icon" style="background: var(--dashboard-danger);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
             </div>
-            <div class="stat-number">{{ stats.low_stock_count }}</div>
+            <div class="stat-number">{{ stats.low_stock_count|default:0 }}</div>
             <div class="stat-label">Low Stock Items</div>
-            {% if stats.low_stock_count > 0 %}
-                <div class="stat-change negative">
-                    <i class="fas fa-arrow-down"></i> Restock Needed
-                </div>
-            {% else %}
-                <div class="stat-change positive">
-                    <i class="fas fa-check"></i> All Good
-                </div>
-            {% endif %}
-        </div>
+            <div class="mt-2">
+                {% if stats.low_stock_count > 0 %}
+                    <small class="text-danger">Restock needed</small>
+                {% else %}
+                    <small class="text-success">Stock levels OK</small>
+                {% endif %}
+            </div>
+        </a>
     </div>
 
     <!-- Quick Actions -->
@@ -912,5 +1231,209 @@ document.addEventListener('visibilitychange', function() {
         checkNewOrders();
     }
 });
+
+// Mobile sidebar toggle with improved touch feedback
+function toggleSidebar() {
+    const sidebar = document.querySelector('.mobile-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+    
+    // Add haptic feedback on mobile devices
+    if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+    }
+}
+
+// Enhanced quick actions for mobile
+function showQuickActions() {
+    // Show a mobile-friendly action sheet
+    const actions = [
+        { name: 'Add Product', url: '{% url "stores:inventory_management" %}', icon: 'fas fa-plus' },
+        { name: 'View Analytics', url: '#', icon: 'fas fa-chart-line' },
+        { name: 'Settings', url: '#', icon: 'fas fa-cog' },
+        { name: 'Support', url: '#', icon: 'fas fa-question-circle' }
+    ];
+    
+    let actionSheet = document.querySelector('.action-sheet');
+    if (!actionSheet) {
+        actionSheet = document.createElement('div');
+        actionSheet.className = 'action-sheet';
+        actionSheet.innerHTML = `
+            <div class="action-sheet-backdrop"></div>
+            <div class="action-sheet-content">
+                <div class="action-sheet-header">
+                    <h6>Quick Actions</h6>
+                    <button class="btn-close" onclick="hideQuickActions()">×</button>
+                </div>
+                <div class="action-sheet-body">
+                    ${actions.map(action => `
+                        <a href="${action.url}" class="action-sheet-item">
+                            <i class="${action.icon}"></i>
+                            ${action.name}
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(actionSheet);
+        
+        // Add CSS for action sheet
+        const style = document.createElement('style');
+        style.textContent = `
+            .action-sheet {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 2000;
+                display: none;
+            }
+            .action-sheet.show {
+                display: block;
+            }
+            .action-sheet-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+            }
+            .action-sheet-content {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-radius: 20px 20px 0 0;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+            }
+            .action-sheet.show .action-sheet-content {
+                transform: translateY(0);
+            }
+            .action-sheet-header {
+                padding: 1rem;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .action-sheet-body {
+                padding: 0.5rem 0;
+            }
+            .action-sheet-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                color: #333;
+                text-decoration: none;
+                border-bottom: 1px solid #f8f9fa;
+            }
+            .action-sheet-item:hover {
+                background: #f8f9fa;
+            }
+            .action-sheet-item i {
+                width: 24px;
+                margin-right: 1rem;
+                color: var(--dashboard-primary);
+            }
+            .btn-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: #999;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    actionSheet.classList.add('show');
+    
+    // Add click handler for backdrop
+    actionSheet.querySelector('.action-sheet-backdrop').onclick = hideQuickActions;
+}
+
+function hideQuickActions() {
+    const actionSheet = document.querySelector('.action-sheet');
+    if (actionSheet) {
+        actionSheet.classList.remove('show');
+    }
+}
+
+// Enhanced mobile functionality
+function initMobileFeatures() {
+    // Add touch feedback to all clickable elements
+    const clickableElements = document.querySelectorAll('.stat-card, .quick-action, .bottom-nav-item, .sidebar-nav-item');
+    
+    clickableElements.forEach(element => {
+        element.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        
+        element.addEventListener('touchend', function() {
+            this.style.transform = '';
+        });
+    });
+    
+    // Improve mobile scrolling
+    if ('scrollBehavior' in document.documentElement.style) {
+        document.documentElement.style.scrollBehavior = 'smooth';
+    }
+    
+    // Add swipe gesture for sidebar
+    let startX, startY, isScrolling;
+    
+    document.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isScrolling = undefined;
+    });
+    
+    document.addEventListener('touchmove', function(e) {
+        if (isScrolling || !startX || !startY) return;
+        
+        const deltaX = e.touches[0].clientX - startX;
+        const deltaY = e.touches[0].clientY - startY;
+        
+        if (isScrolling === undefined) {
+            isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+        }
+        
+        if (!isScrolling && deltaX > 50 && startX < 50) {
+            // Swipe right from left edge to open sidebar
+            toggleSidebar();
+        }
+    });
+}
+
+// Auto-hide mobile address bar on scroll (iOS Safari)
+let ticking = false;
+
+function updateViewport() {
+    if (!ticking) {
+        requestAnimationFrame(() => {
+            // Force viewport height recalculation
+            document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+            ticking = false;
+        });
+        ticking = true;
+    }
+}
+
+// Initialize mobile features when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 768) {
+        initMobileFeatures();
+    }
+});
+
+window.addEventListener('resize', updateViewport);
+window.addEventListener('orientationchange', updateViewport);
+updateViewport();
 </script>
+
 {% endblock %}

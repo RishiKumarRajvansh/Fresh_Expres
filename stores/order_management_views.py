@@ -97,8 +97,12 @@ class StoreOrderListView(StoreRequiredMixin, ListView):
     paginate_by = 25
     
     def dispatch(self, request, *args, **kwargs):
+        # Ensure user is authenticated
+        if not request.user.is_authenticated:
+            return redirect('accounts:email_login')
+            
         # Only allow store owners, not staff
-        if request.user.user_type == 'store_staff':
+        if hasattr(request.user, 'user_type') and request.user.user_type == 'store_staff':
             messages.error(request, 'Staff members can only view orders assigned to them. Please use the staff orders page.')
             return redirect('stores:staff_orders')
         return super().dispatch(request, *args, **kwargs)

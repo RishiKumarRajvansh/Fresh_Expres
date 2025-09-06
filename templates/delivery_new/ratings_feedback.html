@@ -1,0 +1,171 @@
+{% extends "delivery_new/delivery_base.html" %}
+{% load static %}
+
+{% block title %}Ratings & Feedback{% endblock %}
+
+{% block delivery_content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Ratings & Feedback</h1>
+        <a href="{% url 'delivery_new:agent_profile' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+        </a>
+    </div>
+    
+    <!-- Rating Summary -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <h2 class="display-4 mb-0">{{ agent.average_rating|floatformat:1 }}</h2>
+                    <div class="rating-stars my-2">
+                        {% for i in "12345" %}
+                            <i class="fas fa-star {% if forloop.counter <= agent.average_rating %}text-warning{% else %}text-muted{% endif %}" style="font-size: 24px;"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="text-muted">Based on {{ ratings|length }} ratings</p>
+                </div>
+                <div class="col-md-8">
+                    <h5 class="mb-3">Rating Breakdown</h5>
+                    
+                    <!-- 5 Star -->
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2" style="width: 60px;">5 stars</div>
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ rating_breakdown.5 }}%;" 
+                                 aria-valuenow="{{ rating_breakdown.5 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="ms-2" style="width: 40px;">{{ rating_breakdown.5 }}%</div>
+                    </div>
+                    
+                    <!-- 4 Star -->
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2" style="width: 60px;">4 stars</div>
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ rating_breakdown.4 }}%;" 
+                                 aria-valuenow="{{ rating_breakdown.4 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="ms-2" style="width: 40px;">{{ rating_breakdown.4 }}%</div>
+                    </div>
+                    
+                    <!-- 3 Star -->
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2" style="width: 60px;">3 stars</div>
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                 style="width: {{ rating_breakdown.3 }}%;" 
+                                 aria-valuenow="{{ rating_breakdown.3 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="ms-2" style="width: 40px;">{{ rating_breakdown.3 }}%</div>
+                    </div>
+                    
+                    <!-- 2 Star -->
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2" style="width: 60px;">2 stars</div>
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ rating_breakdown.2 }}%;" 
+                                 aria-valuenow="{{ rating_breakdown.2 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="ms-2" style="width: 40px;">{{ rating_breakdown.2 }}%</div>
+                    </div>
+                    
+                    <!-- 1 Star -->
+                    <div class="d-flex align-items-center">
+                        <div class="me-2" style="width: 60px;">1 star</div>
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ rating_breakdown.1 }}%;" 
+                                 aria-valuenow="{{ rating_breakdown.1 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="ms-2" style="width: 40px;">{{ rating_breakdown.1 }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rating Breakdown by Category -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Performance by Category</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="text-center">
+                        <h6>Delivery Time</h6>
+                        <div class="display-6 mb-1">{{ category_avg.delivery_time|floatformat:1 }}</div>
+                        <div class="rating-stars">
+                            {% for i in "12345" %}
+                                <i class="fas fa-star {% if forloop.counter <= category_avg.delivery_time %}text-warning{% else %}text-muted{% endif %}" style="font-size: 18px;"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="text-center">
+                        <h6>Packaging Quality</h6>
+                        <div class="display-6 mb-1">{{ category_avg.packaging|floatformat:1 }}</div>
+                        <div class="rating-stars">
+                            {% for i in "12345" %}
+                                <i class="fas fa-star {% if forloop.counter <= category_avg.packaging %}text-warning{% else %}text-muted{% endif %}" style="font-size: 18px;"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h6>Agent Behavior</h6>
+                        <div class="display-6 mb-1">{{ category_avg.agent_behavior|floatformat:1 }}</div>
+                        <div class="rating-stars">
+                            {% for i in "12345" %}
+                                <i class="fas fa-star {% if forloop.counter <= category_avg.agent_behavior %}text-warning{% else %}text-muted{% endif %}" style="font-size: 18px;"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Customer Reviews -->
+    <h4 class="mb-3">Customer Reviews</h4>
+    
+    {% if ratings %}
+        {% for rating in ratings %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star {% if forloop.counter <= rating.overall_rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="text-muted ms-2">Order #{{ rating.order.order_number }}</span>
+                        </div>
+                        <small class="text-muted">{{ rating.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    
+                    {% if rating.feedback %}
+                        <p class="mb-0">{{ rating.feedback }}</p>
+                    {% else %}
+                        <p class="text-muted mb-0"><em>No written feedback provided</em></p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-star-half-alt text-muted mb-3" style="font-size: 48px;"></i>
+                <h5>No Ratings Yet</h5>
+                <p class="text-muted">You haven't received any customer ratings yet.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock delivery_content %}

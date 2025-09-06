@@ -201,7 +201,7 @@ class EmailLoginView(View):
             elif user_type == 'store' and request.user.user_type == 'store_staff':
                 return redirect('stores:staff_dashboard')
             elif user_type == 'delivery' and request.user.user_type == 'delivery_agent':
-                return redirect('delivery:agent_dashboard')
+                return redirect('delivery_new:dashboard')
         
         return render(request, 'accounts/email_login.html', {'user_type': user_type})
     
@@ -261,7 +261,8 @@ class EmailLoginView(View):
             elif user.user_type == 'store_staff':
                 return redirect('stores:staff_dashboard')
         elif user_type == 'delivery':
-            return redirect('delivery:agent_dashboard')
+            # Redirect directly to new delivery dashboard instead of the old one
+            return redirect('delivery_new:dashboard')
         
         return redirect('core:home')
 

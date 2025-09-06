@@ -1,0 +1,262 @@
+{% extends 'delivery_new/delivery_base.html' %}
+{% load static %}
+
+{% block title %}Agent Profile{% endblock %}
+
+{% block delivery_content %}
+<div class="agent-profile container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Agent Profile</h1>
+    </div>
+    
+    <div class="row">
+        <!-- Agent Info -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center">
+                    {% if agent.profile_image %}
+                        <img src="{{ agent.profile_image.url }}" alt="{{ agent.name }}" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                    {% else %}
+                        <div class="profile-placeholder rounded-circle mb-3 d-flex align-items-center justify-content-center bg-light" style="width: 120px; height: 120px; margin: 0 auto;">
+                            <i class="fas fa-user-circle" style="font-size: 48px;"></i>
+                        </div>
+                    {% endif %}
+                    <h4>{{ agent.name }}</h4>
+                    <p class="text-muted mb-0">Delivery Agent</p>
+                    <p class="mb-2">ID: {{ agent.agent_id }}</p>
+                    
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="me-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rating-stars me-1">
+                                    {% for i in "12345" %}
+                                        <i class="fas fa-star {% if forloop.counter <= agent.average_rating %}text-warning{% else %}text-muted{% endif %}" style="font-size: 18px;"></i>
+                                    {% endfor %}
+                                </div>
+                                <span>{{ agent.average_rating|floatformat:1 }}</span>
+                            </div>
+                            <div class="text-center">
+                                <a href="{% url 'delivery_new:ratings_feedback' %}" class="small">View all ratings</a>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge bg-{% if agent.is_available %}success{% else %}secondary{% endif %}">
+                                {% if agent.is_available %}Available{% else %}Unavailable{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="border-top pt-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h5>{{ agent.total_deliveries }}</h5>
+                                <small class="text-muted">Deliveries</small>
+                            </div>
+                            <div class="col-4">
+                                <h5>{{ agent.successful_deliveries }}</h5>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                            <div class="col-4">
+                                <h5>₹{{ agent.total_earnings|floatformat:0 }}</h5>
+                                <small class="text-muted">Earnings</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Info -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Email:</strong> {{ agent.user.email }}</p>
+                    <p class="mb-2"><strong>Phone:</strong> {{ agent.phone }}</p>
+                    <p class="mb-2"><strong>Status:</strong> {{ agent.get_status_display }}</p>
+                    
+                    <!-- Service Areas -->
+                    <p class="mb-2">
+                        <strong>Service Areas:</strong>
+                        {% with active_count=0 %}
+                            {% for coverage in agent.zip_coverages.all %}
+                                {% if coverage.is_active %}
+                                    {% with active_count=active_count|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if active_count > 0 %}
+                                <span class="text-success">
+                                    {{ active_count }} ZIP code{% if active_count != 1 %}s{% endif %} selected
+                                </span>
+                            {% else %}
+                                <span class="text-danger">None selected</span>
+                            {% endif %}
+                        {% endwith %}
+                    </p>
+                    
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'delivery_new:agent_zip_coverage' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-map-marker-alt me-2"></i>Manage Service Areas
+                        </a>
+                        <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats and History -->
+        <div class="col-lg-8">
+            <!-- Performance Stats -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Performance Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Completion Rate</span>
+                                    <span>{{ agent.completion_rate|floatformat:1 }}%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ agent.completion_rate }}%;" 
+                                         aria-valuenow="{{ agent.completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>On-Time Rate</span>
+                                    <span>{{ agent.ontime_rate|default:"N/A" }}</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ agent.ontime_rate|default:0 }}%;" 
+                                         aria-valuenow="{{ agent.ontime_rate|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-center mb-3">Delivery Breakdown</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Successful:</span>
+                                        <span>{{ agent.successful_deliveries }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Failed:</span>
+                                        <span>{{ agent.failed_deliveries }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Cancelled:</span>
+                                        <span>{{ agent.cancelled_deliveries|default:"0" }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between font-weight-bold border-top pt-2 mt-2">
+                                        <span>Total:</span>
+                                        <span>{{ agent.total_deliveries }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'delivery_new:agent_earnings' %}" class="btn btn-outline-primary">
+                            View Earnings Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Settings -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Account Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Availability Status</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="availabilityToggle" 
+                                   {% if agent.is_available %}checked{% endif %}>
+                            <label class="form-check-label" for="availabilityToggle">
+                                {% if agent.is_available %}Available for Deliveries{% else %}Not Available{% endif %}
+                            </label>
+                        </div>
+                        <div class="form-text">Toggle your availability to receive new delivery assignments</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Account Status</label>
+                        <input type="text" class="form-control" value="{{ agent.get_status_display }}" readonly>
+                    </div>
+                    
+                    <div class="border-top pt-3 mt-3">
+                        <div class="d-flex justify-content-between">
+                            <a href="#" class="btn btn-outline-primary">
+                                Edit Profile
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary">
+                                Change Password
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock delivery_content %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Toggle availability status
+        $('#availabilityToggle').change(function() {
+            const isAvailable = $(this).prop('checked');
+            const label = $(this).next('label');
+            
+            // Update UI immediately for better UX
+            if (isAvailable) {
+                label.text('Available for Deliveries');
+            } else {
+                label.text('Not Available');
+            }
+            
+            // Send AJAX request to update status
+            $.ajax({
+                url: '{% url "delivery_new:toggle_availability_api" %}',
+                type: 'POST',
+                data: JSON.stringify({
+                    is_available: isAvailable
+                }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('Status updated successfully');
+                    } else {
+                        console.error('Failed to update status');
+                        // Revert the toggle if there was an error
+                        $('#availabilityToggle').prop('checked', !isAvailable);
+                        label.text(isAvailable ? 'Not Available' : 'Available for Deliveries');
+                    }
+                },
+                error: function() {
+                    console.error('Error connecting to server');
+                    // Revert the toggle if there was an error
+                    $('#availabilityToggle').prop('checked', !isAvailable);
+                    label.text(isAvailable ? 'Not Available' : 'Available for Deliveries');
+                }
+            });
+        });
+    });
+</script>
+{% endblock extra_js %}

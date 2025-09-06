@@ -15,6 +15,332 @@
     --border-radius: 12px;
 }
 
+/* Mobile Navigation Styles */
+.customer-mobile-nav {
+    background: var(--dashboard-primary);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: none;
+    /* height: 60px; */
+}
+
+.mobile-nav-brand {
+    color: white !important;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+.mobile-nav-toggle {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    transition: background-color 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.mobile-nav-toggle:hover,
+.mobile-nav-toggle:active,
+.mobile-nav-toggle:focus {
+    background: rgba(255,255,255,0.1) !important;
+    outline: none !important;
+}
+
+/* Bottom Navigation for Mobile */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #dee2e6;
+    z-index: 1030;
+    display: none;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    height: 70px;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #6c757d;
+    padding: 0.5rem;
+    min-width: 60px;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    position: relative;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item:active,
+.bottom-nav-item.active {
+    color: var(--dashboard-primary);
+    background: rgba(44, 95, 45, 0.1);
+    transform: translateY(-2px);
+}
+
+.bottom-nav-item i {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--dashboard-danger);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Mobile Sidebar */
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    height: 100vh;
+    background: white;
+    z-index: 1040;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    display: none;
+}
+
+.mobile-sidebar.show {
+    left: 0;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 1035;
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+.sidebar-header {
+    background: var(--dashboard-primary);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+}
+
+.sidebar-nav-item {
+    display: block;
+    padding: 1rem;
+    color: #495057;
+    text-decoration: none;
+    border-bottom: 1px solid #f1f3f4;
+    transition: all 0.2s ease;
+    position: relative;
+    font-size: 1rem;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item:active,
+.sidebar-nav-item.active {
+    background-color: #f8f9fa;
+    color: var(--dashboard-primary);
+    transform: translateX(4px);
+}
+
+.sidebar-nav-item i {
+    width: 24px;
+    margin-right: 1rem;
+    text-align: center;
+}
+
+.sidebar-nav-item .notification-badge {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    /* Hide main site navigation for customer users */
+    .navbar:not(.customer-mobile-nav) {
+        display: none !important;
+    }
+    
+    /* Override Bootstrap grid for mobile */
+    .row {
+        margin: 0 !important;
+    }
+    
+    .col-md-3, .col-md-9, .col-lg-2, .col-lg-10 {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        flex: none !important;
+        width: 100% !important;
+    }
+    
+    /* Show mobile customer navigation */
+    .customer-mobile-nav { 
+        display: block !important; 
+        position: sticky !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1030 !important;
+        width: 100% !important;
+        /* height: 60px !important; */
+        background: var(--dashboard-primary) !important;
+        padding: 0 !important;
+    }
+    
+    /* Also add padding 0 to the container inside navbar */
+    .customer-mobile-nav .container-fluid {
+        padding: 0 !important;
+    }
+    
+    /* Reset body padding since we're using sticky positioning */
+    body {
+        padding-top: 0 !important;
+        padding-bottom: 80px !important;
+    }
+    .bottom-nav { 
+        display: flex !important; 
+        width: 100vw;
+        left: 0;
+        right: 0;
+    }
+    .mobile-sidebar { 
+        display: block !important; 
+    }
+    
+    /* Adjust content for mobile navigation */
+    html, body { 
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    body {
+        padding-bottom: 80px !important;
+    }
+    
+    /* Make main content full width on mobile */
+    .store-content {
+        margin: 0 !important;
+        padding: 1rem 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: calc(100vh - 140px) !important;
+        box-sizing: border-box !important;
+    }
+    
+    .container-fluid {
+        padding: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Fix any container or row issues */
+    .row {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Make main content full width on mobile */
+    .container {
+        padding: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Ensure dashboard header fits properly */
+    .dashboard-header {
+        margin: 1rem 0 1rem 0 !important;
+        padding: 1rem !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+}
+
+/* Desktop styles - ensure proper display on larger screens */
+@media (min-width: 769px) {
+    .customer-mobile-nav {
+        display: none !important;
+    }
+    
+    .bottom-nav {
+        display: none !important;
+    }
+    
+    .mobile-sidebar {
+        display: none !important;
+    }
+    
+    /* Ensure main navigation is visible on desktop */
+    .navbar:not(.customer-mobile-nav) {
+        display: flex !important;
+    }
+}
+
 .dashboard-header {
     background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-success) 100%);
     color: white;
@@ -200,6 +526,70 @@
 {% endblock %}
 
 {% block content %}
+<!-- Mobile Navigation Header -->
+<nav class="navbar customer-mobile-nav">
+    <div class="container-fluid">
+        <button class="mobile-nav-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a class="mobile-nav-brand" href="{% url 'core:customer_dashboard' %}">
+            <i class="fas fa-user me-2"></i>Customer Dashboard
+        </a>
+        <div class="d-flex align-items-center">
+            <a href="{% url 'orders:cart' %}" class="mobile-nav-toggle">
+                <i class="fas fa-shopping-cart"></i>
+                {% if total_cart_items > 0 %}
+                <span class="notification-badge">{{ total_cart_items }}</span>
+                {% endif %}
+            </a>
+            <button class="mobile-nav-toggle" onclick="showQuickActions()">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Sidebar -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="mobile-sidebar">
+    <div class="sidebar-header">
+        <div>
+            <h5 class="mb-0">Customer Menu</h5>
+            <small>{{ user.get_full_name|default:user.username }}</small>
+        </div>
+        <button class="sidebar-close" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="sidebar-nav">
+        <a href="{% url 'core:customer_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'customer_dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i>Dashboard
+        </a>
+        <a href="{% url 'core:home' %}" class="sidebar-nav-item">
+            <i class="fas fa-store"></i>Shop
+        </a>
+        <a href="{% url 'orders:order_list' %}" class="sidebar-nav-item">
+            <i class="fas fa-shopping-bag"></i>My Orders
+        </a>
+        <a href="{% url 'orders:cart' %}" class="sidebar-nav-item">
+            <i class="fas fa-shopping-cart"></i>Cart
+            {% if total_cart_items > 0 %}
+            <span class="notification-badge">{{ total_cart_items }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'accounts:address_list' %}" class="sidebar-nav-item">
+            <i class="fas fa-map-marker-alt"></i>Addresses
+        </a>
+        <a href="{% url 'accounts:profile' %}" class="sidebar-nav-item">
+            <i class="fas fa-user"></i>Profile
+        </a>
+        <div class="border-top my-2"></div>
+        <a href="{% url 'accounts:logout' %}" class="sidebar-nav-item">
+            <i class="fas fa-sign-out-alt"></i>Logout
+        </a>
+    </div>
+</div>
+
 <div class="container-fluid py-4">
     <!-- Dashboard Header -->
     <div class="dashboard-header">
@@ -258,6 +648,29 @@
     </div>
     {% endblock %}
 </div>
+
+<!-- Bottom Navigation for Mobile -->
+<nav class="bottom-nav">
+    <a href="{% url 'core:customer_dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'customer_dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="{% url 'core:home' %}" class="bottom-nav-item">
+        <i class="fas fa-store"></i>
+        <span>Shop</span>
+    </a>
+    <a href="{% url 'orders:order_list' %}" class="bottom-nav-item">
+        <i class="fas fa-shopping-bag"></i>
+        <span>Orders</span>
+    </a>
+    <a href="{% url 'orders:cart' %}" class="bottom-nav-item">
+        <i class="fas fa-shopping-cart"></i>
+        <span>Cart</span>
+        {% if total_cart_items > 0 %}
+        <span class="notification-badge">{{ total_cart_items }}</span>
+        {% endif %}
+    </a>
+</nav>
 {% endblock %}
 
 {% block extra_js %}
@@ -276,5 +689,166 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         });
     });
 });
+
+// Mobile Navigation Functions - Ensure functions are available globally with error handling
+try {
+    window.toggleSidebar = function() {
+        console.log('toggleSidebar called'); // Debug log
+        const sidebar = document.querySelector('.mobile-sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
+        console.log('Sidebar:', sidebar); // Debug log
+        console.log('Overlay:', overlay); // Debug log
+        
+        if (!sidebar || !overlay) {
+            console.log('Sidebar or overlay not found!'); // Debug log
+            return;
+        }
+        
+        const isOpen = sidebar.classList.contains('show');
+        console.log('Sidebar is open:', isOpen); // Debug log
+        
+        if (isOpen) {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+            console.log('Closing sidebar'); // Debug log
+        } else {
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+            console.log('Opening sidebar'); // Debug log
+            
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+    };
+    console.log('toggleSidebar function defined successfully');
+} catch(error) {
+    console.error('Error defining toggleSidebar:', error);
+}
+
+window.showQuickActions = function() {
+    // Create action sheet if it doesn't exist
+    let actionSheet = document.querySelector('.action-sheet');
+    if (!actionSheet) {
+        actionSheet = document.createElement('div');
+        actionSheet.className = 'action-sheet';
+        actionSheet.innerHTML = `
+            <div class="action-sheet-backdrop"></div>
+            <div class="action-sheet-content">
+                <div class="action-sheet-header">
+                    <h6>Quick Actions</h6>
+                    <button class="btn-close" onclick="hideQuickActions()"></button>
+                </div>
+                <div class="action-sheet-body">
+                    <a href="${window.location.origin}/browse/" class="action-sheet-item" onclick="hideQuickActions()">
+                        <i class="fas fa-search"></i>
+                        <span>Browse Products</span>
+                    </a>
+                    <a href="${window.location.origin}/orders/cart/" class="action-sheet-item" onclick="hideQuickActions()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>View Cart</span>
+                    </a>
+                    <a href="${window.location.origin}/accounts/profile/" class="action-sheet-item" onclick="hideQuickActions()">
+                        <i class="fas fa-user"></i>
+                        <span>My Profile</span>
+                    </a>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(actionSheet);
+        
+        // Add styles dynamically
+        const style = document.createElement('style');
+        style.textContent = `
+            .action-sheet {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 2000;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            .action-sheet.show {
+                opacity: 1;
+                visibility: visible;
+            }
+            .action-sheet-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+            }
+            .action-sheet-content {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-radius: 16px 16px 0 0;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+            .action-sheet.show .action-sheet-content {
+                transform: translateY(0);
+            }
+            .action-sheet-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                border-bottom: 1px solid #f8f9fa;
+            }
+            .action-sheet-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                color: #333;
+                text-decoration: none;
+                border-bottom: 1px solid #f8f9fa;
+            }
+            .action-sheet-item:hover {
+                background: #f8f9fa;
+            }
+            .action-sheet-item i {
+                width: 24px;
+                margin-right: 1rem;
+                color: var(--dashboard-primary);
+            }
+            .btn-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: #999;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    actionSheet.classList.add('show');
+    
+    // Add click handler for backdrop
+    actionSheet.querySelector('.action-sheet-backdrop').onclick = hideQuickActions;
+}
+
+window.hideQuickActions = function() {
+    const actionSheet = document.querySelector('.action-sheet');
+    if (actionSheet) {
+        actionSheet.classList.remove('show');
+    }
+};
+
+// Also make it available without window prefix
+var toggleSidebar = window.toggleSidebar;
+var showQuickActions = window.showQuickActions;
+var hideQuickActions = window.hideQuickActions;
 </script>
 {% endblock %}

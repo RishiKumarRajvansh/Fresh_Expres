@@ -28,6 +28,10 @@ class UserTypeAccessMiddleware:
 
         path = request.path_info
         
+        # Skip for AJAX requests - important for API calls like toggle_availability
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or path.startswith('/api/') or '/api/' in path:
+            return self.get_response(request)
+        
         # Skip media files and static files - they should be accessible to all authenticated users
         if path.startswith('/media/') or path.startswith('/static/'):
             return self.get_response(request)
@@ -53,7 +57,7 @@ class UserTypeAccessMiddleware:
                 'redirect_url': 'accounts:email_login',
             },
             'delivery': {
-                'allowed_paths': ['/delivery/', '/dashboards/delivery/', '/core/delivery/'],
+                'allowed_paths': ['/delivery/', '/delivery-new/', '/dashboards/delivery/', '/core/delivery/'],
                 'allowed_users': ['delivery_agent'],
                 'redirect_url': 'accounts:email_login',
             },

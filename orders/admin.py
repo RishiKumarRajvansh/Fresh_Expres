@@ -22,14 +22,18 @@ class OrderStatusHistoryInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_number', 'user', 'store', 'status', 'delivery_confirmation_code', 'handover_code', 'total_amount', 'workflow_status', 'created_at')
+    list_display = ('order_number', 'user', 'store', 'status', 'assigned_agent', 'delivery_confirmation_code', 'handover_code', 'total_amount', 'workflow_status', 'created_at')
     list_filter = ('status', 'payment_status', 'store', 'created_at')
     search_fields = ('order_number', 'user__username', 'store__name', 'delivery_confirmation_code', 'handover_code')
-    readonly_fields = ('order_number', 'order_id', 'delivery_confirmation_code', 'handover_code', 'created_at', 'updated_at')
+    readonly_fields = ('order_number', 'order_id', 'delivery_confirmation_code', 'handover_code', 'created_at', 'updated_at', 'assigned_agent')
     
     fieldsets = (
         ('Order Information', {
             'fields': ('order_number', 'order_id', 'user', 'store', 'status', 'payment_status', 'payment_method')
+        }),
+        ('Delivery Agent', {
+            'fields': ('assigned_agent',),
+            'description': 'Delivery agent assigned to this order'
         }),
         ('Workflow Codes', {
             'fields': ('delivery_confirmation_code', 'handover_code'),
@@ -129,6 +133,18 @@ class OrderAdmin(admin.ModelAdmin):
         if obj and obj.handover_code:
             readonly.append('handover_code')
         return readonly
+        
+    def assigned_agent(self, obj):
+        """Display the assigned delivery agent"""
+        from delivery_new.models import Delivery
+        try:
+            assignment = Delivery.objects.filter(order=obj).select_related('agent').first()
+            if assignment and assignment.agent:
+                return f"{assignment.agent.agent_id} - {assignment.agent.user.get_full_name()}"
+            return "Not Assigned"
+        except Exception:
+            return "Not Assigned"
+    assigned_agent.short_description = 'Delivery Agent'
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fresh Express Delivery Agent{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    {% load static %}
+    <link href="{% static 'css/common.css' %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --dashboard-primary: #3F51B5;
+            --dashboard-success: #4CAF50;
+            --dashboard-warning: #FF9800;
+            --dashboard-danger: #F44336;
+            --dashboard-info: #2196F3;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+        }
+
+        body {
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .delivery-sidebar {
+            min-height: 100vh;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            position: fixed;
+            width: 240px;
+            z-index: 900; /* Lower z-index than navbar */
+            top: 56px; /* Start below navbar */
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+        
+        .delivery-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            padding: 1.5rem;
+            padding-top: 72px; /* Increased padding to account for navbar height (56px) + some spacing */
+            transition: all 0.3s;
+            width: calc(100% - 240px);
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .delivery-nav-link {
+            color: #495057;
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            display: block;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+            transition: all 0.15s ease-in-out;
+        }
+        
+        .delivery-nav-link:hover {
+            color: #3F51B5;
+            background-color: rgba(63, 81, 181, 0.1);
+        }
+        
+        .delivery-nav-link.active {
+            color: #fff;
+            background-color: #3F51B5;
+        }
+
+        /* Navigation Styles */
+        .delivery-main-navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1050;
+            height: 56px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        /* Toggle Switch Styling */
+        .form-check-input.availability-toggle {
+            height: 26px;
+            width: 52px;
+            cursor: pointer;
+            background-image: none;
+            border-radius: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .form-check-input.availability-toggle:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .form-check-input.availability-toggle:not(:checked) {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .form-check-input.availability-toggle:checked::before {
+            content: "✓";
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            left: 9px;
+            top: 1px;
+        }
+        
+        .form-check-input.availability-toggle:not(:checked)::before {
+            content: "✕";
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            right: 9px;
+            top: 1px;
+        }
+        
+        /* Enhance the appearance of toggle text */
+        .form-check-label[for="mobileAvailabilityToggle"],
+        .form-check-label[for="desktopAvailabilityToggle"],
+        .form-check-label[for="sidebarAvailabilityToggle"] {
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        
+        /* Status badge styling */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .status-available {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-unavailable {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delivery-nav-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+
+        .mobile-nav-toggle {
+            background: none !important;
+            border: none !important;
+            color: white !important;
+            font-size: 1.5rem !important;
+            padding: 0.75rem !important;
+            border-radius: 8px !important;
+            transition: background-color 0.2s ease !important;
+            cursor: pointer !important;
+            display: none; /* Hide by default, show only on mobile */
+        }
+        
+        /* Show the toggle only on mobile */
+        @media (max-width: 768px) {
+            .mobile-nav-toggle {
+                display: block;
+            }
+        }
+
+        .mobile-nav-toggle:hover,
+        .mobile-nav-toggle:active,
+        .mobile-nav-toggle:focus {
+            background: rgba(255,255,255,0.1) !important;
+            outline: none !important;
+        }
+
+        /* Bottom Navigation for Mobile */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            display: none;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1010;
+            padding: 0.5rem 0;
+            height: 70px;
+            justify-content: space-around;
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 991.98px) {
+            .delivery-sidebar {
+                left: -260px;
+                top: 56px; /* Position below navbar */
+                position: fixed;
+                height: calc(100vh - 56px); /* Adjust height to account for navbar */
+                width: 260px;
+                z-index: 1050;
+                box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            }
+            
+            .delivery-sidebar.show {
+                left: 0;
+            }
+            
+            .delivery-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1rem;
+                padding-top: 76px; /* Ensure consistent padding for navbar */
+                overflow-x: hidden;
+            }
+            
+            .delivery-main-navbar {
+                width: 100%;
+            }
+            
+            .bottom-nav {
+                display: flex;
+            }
+            
+            body {
+                padding-bottom: 70px;
+                overflow-x: hidden;
+            }
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--dashboard-primary);
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 56px; /* Position below navbar */
+            left: -85%;
+            width: 85%;
+            height: calc(100vh - 56px); /* Adjust height to account for navbar */
+            background: white;
+            z-index: 1040;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .mobile-sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 1035;
+            display: none;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        .sidebar-header {
+            background: var(--dashboard-primary);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .sidebar-nav-item {
+            display: block;
+            padding: 1rem;
+            color: #495057;
+            text-decoration: none;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+            position: relative;
+            font-size: 1rem;
+        }
+
+        .sidebar-nav-item:hover,
+        .sidebar-nav-item.active {
+            background: #f8f9fa;
+            color: var(--dashboard-primary);
+        }
+
+        .sidebar-nav-item i {
+            margin-right: 0.75rem;
+            width: 24px;
+            text-align: center;
+            color: var(--dashboard-primary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .delivery-sidebar {
+                display: none !important;
+            }
+            
+            .delivery-main-navbar {
+                display: flex !important;
+            }
+            
+            .bottom-nav {
+                display: flex !important;
+            }
+            
+            .mobile-sidebar {
+                display: block !important;
+            }
+            
+            .delivery-content {
+                margin: 0 !important;
+                padding: 1rem 0.75rem !important;
+                padding-top: 72px !important; /* Match the desktop padding-top */
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: calc(100vh - 140px) !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+        }
+
+        /* Action button fixed at bottom of screen for mobile */
+        .mobile-action-button {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: var(--dashboard-primary);
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1025;
+            font-size: 24px;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-action-button {
+                display: flex;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Delivery Main Navigation Bar -->
+    <nav class="navbar navbar-dark bg-primary delivery-main-navbar fixed-top">
+        <div class="container-fluid">
+            <button class="mobile-nav-toggle" onclick="toggleMobileSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="delivery-nav-brand" href="{% url 'delivery_new:dashboard' %}">Delivery Dashboard</a>
+            <div class="d-flex align-items-center">
+                <div class="form-check form-switch d-inline-block me-3">
+                    <input class="form-check-input availability-toggle" type="checkbox" id="mobileAvailabilityToggle" 
+                           {% if agent.is_available %}checked{% endif %}>
+                    <label class="form-check-label text-white" for="mobileAvailabilityToggle">
+                        <span class="status-badge {% if agent.is_available %}status-available{% else %}status-unavailable{% endif %}">
+                            {% if agent.is_available %}Available{% else %}Unavailable{% endif %}
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+        <div class="sidebar-header">
+            <h5 class="mb-0">Delivery Agent</h5>
+            <button class="sidebar-close" onclick="toggleMobileSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-3 border-bottom">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas fa-user-circle me-2" style="font-size: 3rem; color: #ccc;"></i>
+                <div>
+                    <h6 class="mb-0">{{ agent.user.get_full_name }}</h6>
+                    <small class="text-muted">{{ agent.agent_id }}</small>
+                </div>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input availability-toggle" type="checkbox" id="sidebarAvailabilityToggle" 
+                       {% if agent.is_available %}checked{% endif %}>
+                <label class="form-check-label" for="sidebarAvailabilityToggle">
+                    <span class="status-badge {% if agent.is_available %}status-available{% else %}status-unavailable{% endif %}">
+                        {% if agent.is_available %}Available{% else %}Unavailable{% endif %}
+                    </span>
+                </label>
+            </div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="{% url 'delivery_new:dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>Dashboard
+            </a>
+            <a href="{% url 'delivery_new:delivery_list' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'delivery_list' %}active{% endif %}">
+                <i class="fas fa-motorcycle"></i>My Deliveries
+            </a>
+            <a href="{% url 'delivery_new:agent_earnings' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'earnings' or request.resolver_match.url_name == 'agent_earnings' %}active{% endif %}">
+                <i class="fas fa-rupee-sign"></i>Earnings
+            </a>
+            <a href="{% url 'delivery_new:agent_profile' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'agent_profile' %}active{% endif %}">
+                <i class="fas fa-user"></i>Profile
+            </a>
+            <a href="{% url 'accounts:password_change' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'password_change' %}active{% endif %}">
+                <i class="fas fa-key"></i>Change Password
+            </a>
+            <div class="border-top my-2"></div>
+            <a href="{% url 'accounts:logout' %}" class="sidebar-nav-item">
+                <i class="fas fa-sign-out-alt"></i>Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar -->
+    <div class="d-none d-lg-block delivery-sidebar">
+        <div class="p-3 border-bottom">
+            <h5 class="mb-3">Delivery Dashboard</h5>
+            <div class="d-flex align-items-center mb-3">
+                <div class="avatar-placeholder bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    {{ agent.user.get_initials|default:"DA" }}
+                </div>
+                <div>
+                    <h6 class="mb-0">{{ agent.user.get_full_name }}</h6>
+                    <small class="text-muted">Delivery Agent</small>
+                </div>
+            </div>
+            
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input availability-toggle" type="checkbox" id="desktopAvailabilityToggle" {% if agent.is_available %}checked{% endif %}>
+                <label class="form-check-label" for="desktopAvailabilityToggle">
+                    {% if agent.is_available %}Available{% else %}Unavailable{% endif %}
+                </label>
+            </div>
+        </div>
+        
+        <div class="p-2">
+            <a href="{% url 'delivery_new:dashboard' %}" class="delivery-nav-link {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
+                <i class="fas fa-home me-2"></i> Dashboard
+            </a>
+            <a href="{% url 'delivery_new:delivery_list' %}" class="delivery-nav-link {% if request.resolver_match.url_name == 'delivery_list' %}active{% endif %}">
+                <i class="fas fa-motorcycle me-2"></i> My Deliveries
+            </a>
+            <a href="{% url 'delivery_new:agent_earnings' %}" class="delivery-nav-link {% if request.resolver_match.url_name == 'earnings' or request.resolver_match.url_name == 'agent_earnings' %}active{% endif %}">
+                <i class="fas fa-rupee-sign me-2"></i> Earnings
+            </a>
+            <a href="{% url 'delivery_new:agent_profile' %}" class="delivery-nav-link {% if request.resolver_match.url_name == 'agent_profile' %}active{% endif %}">
+                <i class="fas fa-user me-2"></i> Profile
+            </a>
+            <a href="{% url 'accounts:password_change' %}" class="delivery-nav-link {% if request.resolver_match.url_name == 'password_change' %}active{% endif %}">
+                <i class="fas fa-key me-2"></i> Change Password
+            </a>
+            <a href="{% url 'accounts:logout' %}" class="delivery-nav-link text-danger">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="delivery-content">
+            <!-- Main Content Area -->
+    <div class="delivery-content" id="delivery-content">
+        {% if messages %}
+            <div class="container mt-3 mb-0">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% if agent %}
+            {% with has_coverage=False %}
+                {% for coverage in agent.zip_coverages.all %}
+                    {% if coverage.is_active %}
+                        {% with has_coverage=True %}{% endwith %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if not has_coverage %}
+                    <div class="container mt-3 mb-0">
+                        <div class="alert alert-warning" role="alert">
+                            <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Service Area Required</h5>
+                            <p>You need to select ZIP codes for your service area before you can go online and accept deliveries.</p>
+                            <hr>
+                            <a href="{% url 'delivery_new:agent_zip_coverage' %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-map-marker-alt me-1"></i> Set Service Area Now
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+        
+        {% block delivery_content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Navigation for Mobile -->
+    <nav class="bottom-nav">
+        <a href="{% url 'delivery_new:dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="{% url 'delivery_new:delivery_list' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'delivery_list' or request.resolver_match.url_name == 'assignments' %}active{% endif %}">
+            <i class="fas fa-motorcycle"></i>
+            <span>Deliveries</span>
+        </a>
+        <a href="{% url 'delivery_new:agent_earnings' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'earnings' or request.resolver_match.url_name == 'agent_earnings' %}active{% endif %}">
+            <i class="fas fa-rupee-sign"></i>
+            <span>Earnings</span>
+        </a>
+        <a href="{% url 'delivery_new:agent_profile' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'agent_profile' %}active{% endif %}">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Quick action button for mobile -->
+    <a href="{% url 'delivery_new:delivery_list' %}?status=pending" class="mobile-action-button">
+        <i class="fas fa-motorcycle"></i>
+    </a>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Toggle Mobile Sidebar
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+                
+                // Prevent body scrolling when sidebar is open
+                if (sidebar.classList.contains('show')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            } else {
+                // If we're on another page, redirect to dashboard
+                window.location.href = "{% url 'delivery_new:dashboard' %}";
+            }
+        }
+        
+        // Toggle Agent Availability
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleSwitches = [
+                document.getElementById('desktopAvailabilityToggle'),
+                document.getElementById('mobileAvailabilityToggle'),
+                document.getElementById('sidebarAvailabilityToggle'),
+                document.getElementById('availabilityToggle') // Add dashboard toggle
+            ];
+            
+            toggleSwitches.forEach(function(toggle) {
+                if (toggle) {
+                    toggle.addEventListener('change', function() {
+                        // Synchronize all toggle switches
+                        const isAvailable = this.checked;
+                        toggleSwitches.forEach(function(t) {
+                            if (t) t.checked = isAvailable;
+                        });
+                        
+                        // Update labels
+                        document.querySelectorAll('.form-check-label').forEach(function(label) {
+                            label.textContent = isAvailable ? 'Available' : 'Unavailable';
+                        });
+                        
+                        // Send API request to update availability
+                        fetch('{% url "delivery_new:toggle_availability_api" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken'),
+                                'X-Requested-With': 'XMLHttpRequest'  // Indicate AJAX request
+                            },
+                            credentials: 'same-origin',  // Include cookies for session authentication
+                            body: JSON.stringify({
+                                is_available: isAvailable
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Success notification could be added here
+                            } else {
+                                // Revert toggle if request failed
+                                toggleSwitches.forEach(function(t) {
+                                    if (t) t.checked = !isAvailable;
+                                });
+                                
+                                if (data.error && data.error.includes('ZIP code required')) {
+                                    // Show a more user-friendly message
+                                    const confirmed = confirm('You need to set your service areas before going online. Would you like to set your service areas now?');
+                                    if (confirmed && data.redirect_url) {
+                                        window.location.href = "{% url 'delivery_new:agent_zip_coverage' %}";
+                                    } else {
+                                        console.error('Failed to update availability: ZIP code required');
+                                    }
+                                } else {
+                                    // Show generic error
+                                    alert('Failed to update availability: ' + data.error);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            // Revert toggle if request failed
+                            toggleSwitches.forEach(function(t) {
+                                if (t) t.checked = !isAvailable;
+                            });
+                            alert('Failed to update availability: ' + error);
+                        });
+                    });
+                }
+            });
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

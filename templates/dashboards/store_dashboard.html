@@ -1,6 +1,221 @@
 {% extends 'dashboards/base_dashboard.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --store-primary: #2C5F2D;
+        --store-success: #4CAF50;
+        --store-warning: #FF9800;
+        --store-danger: #F44336;
+        --store-info: #2196F3;
+    }
+    
+    /* Mobile-first Store Navigation */
+    .store-mobile-nav {
+        background: var(--store-primary);
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: none;
+    }
+    
+    .store-nav-brand {
+        color: white !important;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    
+    .mobile-nav-toggle {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    /* Bottom Navigation for Mobile */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #dee2e6;
+        z-index: 1030;
+        display: none;
+        justify-content: space-around;
+        padding: 0.5rem 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #6c757d;
+        padding: 0.5rem;
+        min-width: 60px;
+        font-size: 0.75rem;
+        transition: color 0.2s ease;
+    }
+    
+    .bottom-nav-item:hover,
+    .bottom-nav-item.active {
+        color: var(--store-primary);
+    }
+    
+    .bottom-nav-item i {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--store-danger);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    /* Mobile Sidebar */
+    .mobile-sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        z-index: 1040;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        display: none;
+    }
+    
+    .mobile-sidebar.show {
+        left: 0;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 1035;
+        display: none;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    .sidebar-header {
+        background: var(--store-primary);
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sidebar-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .sidebar-nav {
+        padding: 1rem 0;
+    }
+    
+    .sidebar-nav-item {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: #495057;
+        text-decoration: none;
+        border-bottom: 1px solid #f1f3f4;
+        transition: background-color 0.2s ease;
+    }
+    
+    .sidebar-nav-item:hover,
+    .sidebar-nav-item.active {
+        background-color: #f8f9fa;
+        color: var(--store-primary);
+    }
+    
+    .sidebar-nav-item i {
+        width: 20px;
+        margin-right: 0.75rem;
+    }
+    
+    /* Make stat cards clickable for mobile */
+    .stat-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .store-mobile-nav { display: block !important; }
+        .bottom-nav { display: flex !important; }
+        .mobile-sidebar { display: block !important; }
+        
+        /* Hide desktop navigation */
+        .dashboard-header { margin-top: 60px; }
+        
+        /* Adjust content for mobile navigation */
+        body { padding-bottom: 80px; }
+        
+        /* Make stats grid more mobile-friendly */
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            padding: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        /* Mobile section cards */
+        .section-card {
+            margin-bottom: 1rem;
+        }
+        
+        .quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .quick-action-btn {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block header_actions %}
 <a href="{% url 'stores:inventory_management' %}" class="btn btn-outline-light">
     <i class="fas fa-boxes me-1"></i>Inventory
@@ -11,66 +226,131 @@
 {% endblock %}
 
 {% block dashboard_content %}
+
+<!-- Mobile Navigation Header -->
+<nav class="navbar store-mobile-nav">
+    <div class="container-fluid">
+        <button class="mobile-nav-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a class="store-nav-brand" href="{% url 'stores:dashboard' %}">
+            <i class="fas fa-store me-2"></i>Store Dashboard
+        </a>
+        <div class="d-flex align-items-center">
+            {% if stats.pending_orders > 0 %}
+            <div class="position-relative me-3">
+                <i class="fas fa-bell text-white"></i>
+                <span class="notification-badge">{{ stats.pending_orders }}</span>
+            </div>
+            {% endif %}
+            <button class="mobile-nav-toggle" onclick="showQuickActions()">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Sidebar -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="mobile-sidebar">
+    <div class="sidebar-header">
+        <div>
+            <h6 class="mb-0">{{ store.name|default:"Store Management" }}</h6>
+            <small>{{ user.get_full_name|default:user.username }}</small>
+        </div>
+        <button class="sidebar-close" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="sidebar-nav">
+        <a href="{% url 'stores:dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>Dashboard
+        </a>
+        <a href="{% url 'stores:orders' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}">
+            <i class="fas fa-clipboard-list"></i>Orders
+            {% if stats.pending_orders > 0 %}
+            <span class="notification-badge">{{ stats.pending_orders }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'stores:inventory_management' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'inventory_management' %}active{% endif %}">
+            <i class="fas fa-boxes"></i>Inventory
+            {% if stats.low_stock_count > 0 %}
+            <span class="notification-badge">{{ stats.low_stock_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'stores:delivery_agents' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'delivery_agents' %}active{% endif %}">
+            <i class="fas fa-motorcycle"></i>Delivery Agents
+        </a>
+        <a href="{% url 'stores:analytics' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+            <i class="fas fa-chart-line"></i>Analytics
+        </a>
+        <div class="border-top my-2"></div>
+        <a href="{% url 'accounts:logout' %}" class="sidebar-nav-item">
+            <i class="fas fa-sign-out-alt"></i>Logout
+        </a>
+    </div>
+</div>
+
 {% if store %}
 <div class="row">
     <!-- Store Stats -->
     <div class="col-12">
         <div class="stats-grid">
-            <div class="stat-card">
+            <a href="{% url 'stores:orders' %}?filter=today" class="stat-card" style="text-decoration: none; color: inherit;">
                 <div class="stat-header">
                     <div class="stat-icon" style="background: var(--dashboard-info);">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ store_stats.total_orders|default:0 }}</div>
-                <div class="stat-label">Total Orders</div>
+                <div class="stat-number">{{ stats.today_orders|default:0 }}</div>
+                <div class="stat-label">Today's Orders</div>
                 <div class="mt-2">
                     <small class="text-muted">+{{ store_stats.weekly_orders|default:0 }} this week</small>
                 </div>
-            </div>
+            </a>
             
-            <div class="stat-card warning">
+            <a href="{% url 'stores:orders' %}?status=pending" class="stat-card warning" style="text-decoration: none; color: inherit;">
                 <div class="stat-header">
                     <div class="stat-icon" style="background: var(--dashboard-warning);">
                         <i class="fas fa-clock"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ store_stats.pending_orders|default:0 }}</div>
+                <div class="stat-number">{{ stats.pending_orders|default:0 }}</div>
                 <div class="stat-label">Pending Orders</div>
                 <div class="mt-2">
                     <small class="text-warning">Need attention</small>
                 </div>
-            </div>
+            </a>
             
-            <div class="stat-card">
+            <a href="{% url 'stores:inventory_management' %}" class="stat-card" style="text-decoration: none; color: inherit;">
                 <div class="stat-header">
                     <div class="stat-icon" style="background: var(--dashboard-success);">
                         <i class="fas fa-box"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ store_stats.active_products|default:0 }}</div>
+                <div class="stat-number">{{ stats.active_products|default:0 }}</div>
                 <div class="stat-label">Active Products</div>
                 <div class="mt-2">
-                    <small class="text-muted">of {{ store_stats.total_products|default:0 }} total</small>
+                    <small class="text-muted">of {{ stats.total_products|default:0 }} total</small>
                 </div>
-            </div>
+            </a>
             
-            <div class="stat-card {% if low_stock|length > 5 %}danger{% endif %}">
+            <a href="{% url 'stores:inventory_management' %}?filter=low_stock" class="stat-card {% if stats.low_stock_count > 5 %}danger{% endif %}" style="text-decoration: none; color: inherit;">
                 <div class="stat-header">
                     <div class="stat-icon" style="background: var(--dashboard-danger);">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ low_stock|length }}</div>
+                <div class="stat-number">{{ stats.low_stock_count|default:0 }}</div>
                 <div class="stat-label">Low Stock Items</div>
                 <div class="mt-2">
-                    {% if low_stock|length > 0 %}
+                    {% if stats.low_stock_count > 0 %}
                         <small class="text-danger">Restock needed</small>
                     {% else %}
                         <small class="text-success">Stock levels OK</small>
                     {% endif %}
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </div>
@@ -307,4 +587,72 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Mobile Bottom Navigation -->
+<div class="bottom-nav">
+    <a href="{% url 'stores:dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        Dashboard
+    </a>
+    <a href="{% url 'stores:orders' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}">
+        <div class="position-relative">
+            <i class="fas fa-clipboard-list"></i>
+            {% if stats.pending_orders > 0 %}
+            <span class="notification-badge">{{ stats.pending_orders }}</span>
+            {% endif %}
+        </div>
+        Orders
+    </a>
+    <a href="{% url 'stores:inventory_management' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'inventory_management' %}active{% endif %}">
+        <div class="position-relative">
+            <i class="fas fa-boxes"></i>
+            {% if stats.low_stock_count > 0 %}
+            <span class="notification-badge">{{ stats.low_stock_count }}</span>
+            {% endif %}
+        </div>
+        Inventory
+    </a>
+    <a href="{% url 'stores:bulk_import' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
+        <i class="fas fa-plus-circle"></i>
+        Add
+    </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mobile sidebar toggle
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.mobile-sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+    
+    // Quick actions (placeholder)
+    function showQuickActions() {
+        // This could show a dropdown or modal with quick actions
+        alert('Quick actions menu would appear here');
+    }
+    
+    // Auto-hide mobile address bar on scroll (iOS Safari)
+    let ticking = false;
+    
+    function updateViewport() {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                // Force viewport height recalculation
+                document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+    
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('orientationchange', updateViewport);
+    updateViewport();
+</script>
 {% endblock %}

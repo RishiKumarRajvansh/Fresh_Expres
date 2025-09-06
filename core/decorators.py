@@ -47,8 +47,13 @@ class StoreRequiredMixin:
         if not request.user.is_authenticated:
             return redirect('accounts:email_login')
         
-        if request.user.user_type not in ['store_owner', 'store_staff']:
-            return redirect('core:home')
+        # Added try-except to handle AnonymousUser 
+        try:
+            if request.user.user_type not in ['store_owner', 'store_staff']:
+                return redirect('core:home')
+        except AttributeError:
+            # If AnonymousUser doesn't have user_type attribute
+            return redirect('accounts:email_login')
         
         return super().dispatch(request, *args, **kwargs)
 

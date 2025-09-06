@@ -1,0 +1,730 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ dashboard_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --dashboard-primary: #2C5F2D;
+    --dashboard-success: #4CAF50;
+    --dashboard-warning: #FF9800;
+    --dashboard-danger: #F44336;
+    --dashboard-info: #2196F3;
+    --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --border-radius: 12px;
+}
+
+/* Mobile Navigation Styles */
+.delivery-mobile-nav {
+    background: var(--dashboard-primary);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: none;
+    /* height: 60px; */
+}
+
+.mobile-nav-brand {
+    color: white !important;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+.mobile-nav-toggle {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.5rem !important;
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    transition: background-color 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.mobile-nav-toggle:hover,
+.mobile-nav-toggle:active,
+.mobile-nav-toggle:focus {
+    background: rgba(255,255,255,0.1) !important;
+    outline: none !important;
+}
+
+/* Bottom Navigation for Mobile */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #dee2e6;
+    z-index: 1030;
+    display: none;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    height: 70px;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #6c757d;
+    padding: 0.5rem;
+    min-width: 60px;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    position: relative;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item:active,
+.bottom-nav-item.active {
+    color: var(--dashboard-primary);
+    background: rgba(44, 95, 45, 0.1);
+    transform: translateY(-2px);
+}
+
+.bottom-nav-item i {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--dashboard-danger);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Mobile Sidebar */
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    height: 100vh;
+    background: white;
+    z-index: 1040;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    display: none;
+}
+
+.mobile-sidebar.show {
+    left: 0;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 1035;
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+.sidebar-header {
+    background: var(--dashboard-primary);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+}
+
+.sidebar-nav-item {
+    display: block;
+    padding: 1rem;
+    color: #495057;
+    text-decoration: none;
+    border-bottom: 1px solid #f1f3f4;
+    transition: all 0.2s ease;
+    position: relative;
+    font-size: 1rem;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item:active,
+.sidebar-nav-item.active {
+    background-color: #f8f9fa;
+    color: var(--dashboard-primary);
+    transform: translateX(4px);
+}
+
+.sidebar-nav-item i {
+    width: 24px;
+    margin-right: 1rem;
+    text-align: center;
+}
+
+.sidebar-nav-item .notification-badge {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    /* Hide main site navigation for delivery agents */
+    .navbar:not(.delivery-mobile-nav) {
+        display: none !important;
+    }
+    
+    /* Override Bootstrap grid for mobile */
+    .row {
+        margin: 0 !important;
+    }
+    
+    .col-md-3, .col-md-9, .col-lg-2, .col-lg-10 {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        flex: none !important;
+        width: 100% !important;
+    }
+    
+    /* Show mobile delivery navigation */
+    .delivery-mobile-nav { 
+        display: block !important; 
+        position: sticky !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1030 !important;
+        width: 100% !important;
+        /* height: 60px !important; */
+        background: var(--dashboard-primary) !important;
+        padding: 0 !important;
+    }
+    
+    /* Also add padding 0 to the container inside navbar */
+    .delivery-mobile-nav .container-fluid {
+        padding: 0 !important;
+    }
+    
+    /* Reset body padding since we're using sticky positioning */
+    body {
+        padding-top: 0 !important;
+        padding-bottom: 80px !important;
+    }
+    
+    .bottom-nav { 
+        display: flex !important; 
+        width: 100vw;
+        left: 0;
+        right: 0;
+    }
+    .mobile-sidebar { 
+        display: block !important; 
+    }
+    
+    /* Adjust content for mobile navigation */
+    html, body { 
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    body {
+        padding-bottom: 80px !important;
+    }
+    
+    /* Make main content full width on mobile */
+    .store-content {
+        margin: 0 !important;
+        padding: 1rem 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: calc(100vh - 140px) !important;
+        box-sizing: border-box !important;
+    }
+    
+    .container-fluid {
+        padding: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Fix any container or row issues */
+    .row {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Make main content full width on mobile */
+    .container {
+        padding: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Ensure dashboard header fits properly */
+    .dashboard-header {
+        margin: 1rem 0 1rem 0 !important;
+        padding: 1rem !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+}
+
+/* Desktop styles - ensure proper display on larger screens */
+@media (min-width: 769px) {
+    .delivery-mobile-nav {
+        display: none !important;
+    }
+    
+    .bottom-nav {
+        display: none !important;
+    }
+    
+    .mobile-sidebar {
+        display: none !important;
+    }
+    
+    /* Ensure main navigation is visible on desktop */
+    .navbar:not(.delivery-mobile-nav) {
+        display: flex !important;
+    }
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-success) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border-left: 4px solid var(--dashboard-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    color: inherit;
+    text-decoration: none;
+}
+
+.stat-card.warning {
+    border-left-color: var(--dashboard-warning);
+}
+
+.stat-card.danger {
+    border-left-color: var(--dashboard-danger);
+}
+
+.stat-card.info {
+    border-left-color: var(--dashboard-info);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--dashboard-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Mobile Navigation Header -->
+<nav class="navbar delivery-mobile-nav">
+    <div class="container-fluid">
+        <button class="mobile-nav-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a class="mobile-nav-brand" href="{% url 'delivery:agent_dashboard' %}">
+            <i class="fas fa-motorcycle me-2"></i>Delivery Dashboard
+        </a>
+        <div class="d-flex align-items-center">
+            {% if agent.is_available %}
+            <span class="badge bg-success me-2">Online</span>
+            {% else %}
+            <span class="badge bg-danger me-2">Offline</span>
+            {% endif %}
+            <button class="mobile-nav-toggle" onclick="showQuickActions()">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Sidebar -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="mobile-sidebar">
+    <div class="sidebar-header">
+        <div>
+            <h5 class="mb-0">Delivery Menu</h5>
+            <small>{{ user.get_full_name|default:user.username }}</small>
+        </div>
+        <button class="sidebar-close" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="sidebar-nav">
+        <a href="{% url 'delivery:agent_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i>Dashboard
+        </a>
+        <a href="{% url 'delivery:agent_orders' %}" class="sidebar-nav-item">
+            <i class="fas fa-clipboard-list"></i>Assignments
+            {% if agent_stats.pending_deliveries > 0 %}
+            <span class="notification-badge">{{ agent_stats.pending_deliveries }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'delivery:earnings' %}" class="sidebar-nav-item">
+            <i class="fas fa-rupee-sign"></i>Earnings
+        </a>
+        <a href="{% url 'delivery:delivery_history' %}" class="sidebar-nav-item">
+            <i class="fas fa-route"></i>History
+        </a>
+        <a href="{% url 'accounts:profile' %}" class="sidebar-nav-item">
+            <i class="fas fa-user"></i>Profile
+        </a>
+        <div class="border-top my-2"></div>
+        <a href="{% url 'accounts:logout' %}" class="sidebar-nav-item">
+            <i class="fas fa-sign-out-alt"></i>Logout
+        </a>
+    </div>
+</div>
+
+<div class="container-fluid py-4">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">{{ dashboard_title }}</h1>
+                <p class="mb-0 opacity-75">
+                    {% now "l, F d, Y" %} • Your delivery assignments and earnings
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+                    {% block header_actions %}
+                    <!-- Subclass can override this -->
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block dashboard_content %}
+    <!-- This will be overridden by specific dashboard types -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-motorcycle fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">Delivery Agent Dashboard</h3>
+                <p class="text-muted">Your delivery assignments and performance metrics</p>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</div>
+
+<!-- Bottom Navigation for Mobile -->
+<nav class="bottom-nav">
+    <a href="{% url 'delivery:dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="{% url 'delivery:assignments' %}" class="bottom-nav-item">
+        <i class="fas fa-clipboard-list"></i>
+        <span>Tasks</span>
+        {% if agent_stats.pending_deliveries > 0 %}
+        <span class="notification-badge">{{ agent_stats.pending_deliveries }}</span>
+        {% endif %}
+    </a>
+    <a href="{% url 'delivery:earnings' %}" class="bottom-nav-item">
+        <i class="fas fa-rupee-sign"></i>
+        <span>Earnings</span>
+    </a>
+    <a href="{% url 'delivery:route_optimization' %}" class="bottom-nav-item">
+        <i class="fas fa-route"></i>
+        <span>Routes</span>
+    </a>
+</nav>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mobile Navigation Functions - Ensure functions are available globally with error handling
+try {
+    window.toggleSidebar = function() {
+        console.log('toggleSidebar called'); // Debug log
+        const sidebar = document.querySelector('.mobile-sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
+        console.log('Sidebar:', sidebar); // Debug log
+        console.log('Overlay:', overlay); // Debug log
+        
+        if (!sidebar || !overlay) {
+            console.log('Sidebar or overlay not found!'); // Debug log
+            return;
+        }
+        
+        const isOpen = sidebar.classList.contains('show');
+        console.log('Sidebar is open:', isOpen); // Debug log
+        
+        if (isOpen) {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+            console.log('Closing sidebar'); // Debug log
+        } else {
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+            console.log('Opening sidebar'); // Debug log
+            
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+    };
+    console.log('toggleSidebar function defined successfully');
+} catch(error) {
+    console.error('Error defining toggleSidebar:', error);
+}
+
+window.showQuickActions = function() {
+    // Create action sheet if it doesn't exist
+    let actionSheet = document.querySelector('.action-sheet');
+    if (!actionSheet) {
+        actionSheet = document.createElement('div');
+        actionSheet.className = 'action-sheet';
+        actionSheet.innerHTML = `
+            <div class="action-sheet-backdrop"></div>
+            <div class="action-sheet-content">
+                <div class="action-sheet-header">
+                    <h6>Quick Actions</h6>
+                    <button class="btn-close" onclick="hideQuickActions()"></button>
+                </div>
+                <div class="action-sheet-body">
+                    <a href="${window.location.origin}/delivery/assignments/" class="action-sheet-item" onclick="hideQuickActions()">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>View Assignments</span>
+                    </a>
+                    <a href="${window.location.origin}/delivery/earnings/" class="action-sheet-item" onclick="hideQuickActions()">
+                        <i class="fas fa-rupee-sign"></i>
+                        <span>Check Earnings</span>
+                    </a>
+                    <a href="#" class="action-sheet-item" onclick="toggleAvailability(); hideQuickActions();">
+                        <i class="fas fa-power-off"></i>
+                        <span>Toggle Status</span>
+                    </a>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(actionSheet);
+        
+        // Add styles dynamically
+        const style = document.createElement('style');
+        style.textContent = `
+            .action-sheet {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 2000;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            .action-sheet.show {
+                opacity: 1;
+                visibility: visible;
+            }
+            .action-sheet-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+            }
+            .action-sheet-content {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-radius: 16px 16px 0 0;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+            .action-sheet.show .action-sheet-content {
+                transform: translateY(0);
+            }
+            .action-sheet-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                border-bottom: 1px solid #f8f9fa;
+            }
+            .action-sheet-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                color: #333;
+                text-decoration: none;
+                border-bottom: 1px solid #f8f9fa;
+            }
+            .action-sheet-item:hover {
+                background: #f8f9fa;
+            }
+            .action-sheet-item i {
+                width: 24px;
+                margin-right: 1rem;
+                color: var(--dashboard-primary);
+            }
+            .btn-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: #999;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    actionSheet.classList.add('show');
+    
+    // Add click handler for backdrop
+    actionSheet.querySelector('.action-sheet-backdrop').onclick = hideQuickActions;
+}
+
+window.hideQuickActions = function() {
+    const actionSheet = document.querySelector('.action-sheet');
+    if (actionSheet) {
+        actionSheet.classList.remove('show');
+    }
+};
+
+window.toggleAvailability = function() {
+    // This would integrate with your existing availability toggle logic
+    const button = document.getElementById('toggle-availability');
+    if (button) {
+        button.click();
+    }
+};
+
+// Also make functions available without window prefix
+var toggleSidebar = window.toggleSidebar;
+var showQuickActions = window.showQuickActions;
+var hideQuickActions = window.hideQuickActions;
+var toggleAvailability = window.toggleAvailability;
+</script>
+{% endblock %}

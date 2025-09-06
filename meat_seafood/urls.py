@@ -27,7 +27,8 @@ urlpatterns = [
     path('stores/', include('stores.urls')),
     path('catalog/', include('catalog.urls')),
     path('orders/', include('orders.urls')),
-    path('delivery/', include('delivery.urls')),
+    path('delivery/', include('delivery_new.urls_legacy')),  # Use legacy URLs with 'delivery' namespace
+    path('delivery-new/', include('delivery_new.urls')),
     path('chat/', include('chat.urls')),
     path('payments/', include('payments.urls')),
 ]

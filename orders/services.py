@@ -150,11 +150,11 @@ class OrderStatusService:
         """Automatically assign delivery agent when order is packed"""
         try:
             # Import here to avoid circular imports
-            from delivery.services import DeliveryAssignmentService
-            from delivery.models import DeliveryAssignment
+            from delivery_new.services import DeliveryService
+            from delivery_new.models import Delivery
             
             # Check if already assigned (check database directly)
-            if DeliveryAssignment.objects.filter(order=order).exists():
+            if Delivery.objects.filter(order=order).exists():
                 logger.info(f"Order {order.order_number} already has delivery assignment")
                 return None
                 

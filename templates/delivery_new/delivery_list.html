@@ -1,0 +1,197 @@
+{% extends 'delivery_new/delivery_base.html' %}
+{% load static %}
+
+{% block title %}My Deliveries{% endblock %}
+
+{% block delivery_content %}
+<div class="delivery-list container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">My Deliveries</h1>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter" name="status">
+                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="in_progress" {% if current_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                        <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="problematic" {% if current_status == 'problematic' %}selected{% endif %}>Problematic</option>
+                        <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Deliveries</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFrom" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="dateTo" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white p-0">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link {% if current_status == 'active' %}active{% endif %}" 
+                       href="{% url 'delivery:delivery_list' %}?status=active">
+                        Active <span class="badge bg-primary">{{ status_counts.active }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_status == 'pending' %}active{% endif %}" 
+                       href="{% url 'delivery:delivery_list' %}?status=pending">
+                        Pending <span class="badge bg-warning">{{ status_counts.pending }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_status == 'in_progress' %}active{% endif %}" 
+                       href="{% url 'delivery:delivery_list' %}?status=in_progress">
+                        In Progress <span class="badge bg-info">{{ status_counts.in_progress }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_status == 'completed' %}active{% endif %}" 
+                       href="{% url 'delivery:delivery_list' %}?status=completed">
+                        Completed <span class="badge bg-success">{{ status_counts.completed }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_status == 'problematic' %}active{% endif %}" 
+                       href="{% url 'delivery:delivery_list' %}?status=problematic">
+                        Issues <span class="badge bg-danger">{{ status_counts.problematic }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            {% if deliveries %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Delivery ID</th>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Store</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Payout</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for delivery in deliveries %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'delivery:delivery_detail' delivery.pk %}" class="text-decoration-none">
+                                        {{ delivery.delivery_id }}
+                                    </a>
+                                </td>
+                                <td>{{ delivery.order.order_number }}</td>
+                                <td>{{ delivery.order.user.get_full_name }}</td>
+                                <td>
+                                    {% if delivery.order.store %}
+                                        {{ delivery.order.store.name }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ delivery.get_status_color }}">
+                                        {{ delivery.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ delivery.created_at|date:"M d, h:i A" }}</td>
+                                <td>₹{{ delivery.agent_payout|floatformat:2 }}</td>
+                                <td>
+                                    <a href="{% url 'delivery:delivery_detail' delivery.pk %}" class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="pagination justify-content-center py-3">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if current_status %}&status={{ current_status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_status %}&status={{ current_status }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
+                    </div>
+                    <h5>No Deliveries Found</h5>
+                    <p class="text-muted">No deliveries match your current filter criteria.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock delivery_content %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Auto-submit form when status changes
+        $('#statusFilter').change(function() {
+            $(this).closest('form').submit();
+        });
+    });
+</script>
+{% endblock extra_js %}

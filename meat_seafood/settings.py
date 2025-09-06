@@ -36,7 +36,7 @@ LOCAL_APPS = [
     'stores',
     'catalog',
     'orders',
-    'delivery',
+    'delivery_new',
     'locations',
     'chat',
     'payments',

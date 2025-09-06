@@ -1,0 +1,420 @@
+{% extends 'delivery_new/delivery_base.html' %}
+{% load static %}
+
+{% block title %}Delivery Details - {{ delivery.delivery_id }}{% endblock %}
+
+{% block delivery_content %}
+<div class="delivery-detail container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'delivery:delivery_list' %}" class="text-decoration-none">
+                <i class="fas fa-arrow-left align-middle"></i> Back to Deliveries
+            </a>
+            <h1 class="h3 mb-0 mt-2">Delivery #{{ delivery.delivery_id }}</h1>
+        </div>
+        <div>
+            <span class="badge bg-{{ delivery.get_status_color }} fs-6 me-2">
+                {{ delivery.get_status_display }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Delivery Info -->
+        <div class="col-lg-8">
+            <!-- Order and Customer Information -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Order Details</h6>
+                            <p class="mb-1"><strong>Order #:</strong> {{ delivery.order.order_number }}</p>
+                            <p class="mb-1"><strong>Date:</strong> {{ delivery.order.created_at|date:"M d, Y h:i A" }}</p>
+                            <p class="mb-1"><strong>Total:</strong> ₹{{ delivery.order.total_amount|floatformat:2 }}</p>
+                            <p class="mb-1"><strong>Items:</strong> {{ delivery.order.items.count }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Customer Information</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ delivery.order.user.get_full_name }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ delivery.order.user.email }}</p>
+                            <p class="mb-1"><strong>Phone:</strong> {{ delivery.order.phone|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Store Information</h6>
+                            {% if delivery.order.store %}
+                                <p class="mb-1"><strong>Store:</strong> {{ delivery.order.store.name }}</p>
+                                <p class="mb-1"><strong>Address:</strong> {{ delivery.order.store.address }}</p>
+                                <p class="mb-1"><strong>Phone:</strong> {{ delivery.order.store.phone }}</p>
+                            {% else %}
+                                <p class="text-muted">Store information not available</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Delivery Information</h6>
+                            <p class="mb-1"><strong>Address:</strong> {{ delivery.order.delivery_address|default:"Not provided" }}</p>
+                            <p class="mb-1"><strong>Instructions:</strong> {{ delivery.order.delivery_instructions|default:"None" }}</p>
+                            <p class="mb-1"><strong>Your Payout:</strong> ₹{{ delivery.agent_payout|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Items -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.store_product.product.image %}
+                                                <img src="{{ item.store_product.product.image.url }}" alt="{{ item.product_name }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <p class="mb-0">{{ item.product_name }}</p>
+                                                {% if item.product_sku %}
+                                                    <small class="text-muted">{{ item.product_sku }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>₹{{ item.unit_price|floatformat:2 }}</td>
+                                    <td>₹{{ item.total_price|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">No items found in this order</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tracking History -->
+            {% if tracking_history %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tracking History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for track in tracking_history %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if forloop.first %}bg-primary{% else %}bg-secondary{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">{{ track.get_status_display }}</h6>
+                                <p class="text-muted small mb-0">{{ track.timestamp|date:"M d, Y h:i A" }}</p>
+                                {% if track.notes %}
+                                <p class="mt-1 mb-0">{{ track.notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Issues -->
+            {% if issues %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Reported Issues</h5>
+                </div>
+                <div class="card-body">
+                    {% for issue in issues %}
+                    <div class="alert {% if issue.resolved %}alert-success{% else %}alert-warning{% endif %} mb-3">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="mb-1">{{ issue.get_issue_type_display }}</h6>
+                            <span class="text-muted small">{{ issue.reported_at|date:"M d, Y h:i A" }}</span>
+                        </div>
+                        <p class="mb-0">{{ issue.description }}</p>
+                        {% if issue.resolved %}
+                        <div class="mt-2 small text-success">
+                            <i class="fas fa-check-circle small align-middle"></i> Resolved
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Card -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 sticky-top" style="top: 20px; z-index: 100;">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Delivery Actions</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Show different actions based on status -->
+                    {% if delivery.status == 'assigned' %}
+                    <div class="alert alert-warning">
+                        <h6>New Delivery Assignment</h6>
+                        <p class="mb-0">This delivery has been assigned to you. Please accept or decline it.</p>
+                    </div>
+                    <form method="post" action="{% url 'delivery:accept_delivery' delivery.pk %}" class="mb-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            Accept Delivery
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        Decline Delivery
+                    </button>
+                    
+                    {% elif delivery.status == 'accepted' %}
+                    <div class="alert alert-info">
+                        <h6>Delivery Accepted</h6>
+                        <p class="mb-0">You've accepted this delivery. Head to the store and mark your arrival.</p>
+                    </div>
+                    <form method="post" action="{% url 'delivery:arrive_at_store' delivery.pk %}" class="mb-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">
+                            I've Arrived at Store
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        Cancel Delivery
+                    </button>
+                    
+                    {% elif delivery.status == 'at_store' %}
+                    <div class="alert alert-info">
+                        <h6>At Store</h6>
+                        <p class="mb-0">You're at the store. Request the OTP from store staff to verify pickup.</p>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Verify Store Pickup</h6>
+                            <form method="post" action="{{ otp_action }}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="otp" class="form-label">Store OTP</label>
+                                    {{ otp_form.otp }}
+                                    <div class="form-text">Ask the store staff for the 6-digit OTP code</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Verify Pickup
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        Cancel Delivery
+                    </button>
+                    
+                    {% elif delivery.status == 'picked_up' %}
+                    <div class="alert alert-info">
+                        <h6>Order Picked Up</h6>
+                        <p class="mb-0">You've picked up the order. Start delivery to the customer.</p>
+                    </div>
+                    <form method="post" action="{% url 'delivery:start_transit' delivery.pk %}" class="mb-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">
+                            Start Delivery to Customer
+                        </button>
+                    </form>
+                    
+                    {% elif delivery.status == 'in_transit' %}
+                    <div class="alert alert-info">
+                        <h6>In Transit</h6>
+                        <p class="mb-0">You're on your way to the customer. Enter the OTP to complete delivery.</p>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Verify Customer Delivery</h6>
+                            <form method="post" action="{{ otp_action }}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="otp" class="form-label">Customer OTP</label>
+                                    {{ otp_form.otp }}
+                                    <div class="form-text">Ask the customer for the 6-digit OTP code</div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    Complete Delivery
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    {% elif delivery.status == 'delivered' %}
+                    <div class="alert alert-success">
+                        <h6>Delivery Completed</h6>
+                        <p class="mb-0">This delivery has been successfully completed.</p>
+                        <div class="mt-2">
+                            <strong>Completed:</strong> {{ delivery.delivered_at|date:"M d, Y h:i A" }}
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                            <h5>Thank You!</h5>
+                            <p class="mb-0">Your payout of ₹{{ delivery.agent_payout|floatformat:2 }} has been added to your earnings.</p>
+                        </div>
+                    </div>
+                    
+                    {% elif delivery.status == 'failed' or delivery.status == 'cancelled' %}
+                    <div class="alert alert-danger">
+                        <h6>Delivery {{ delivery.get_status_display }}</h6>
+                        <p class="mb-0">This delivery was not completed successfully.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Always show report issue button (except for completed/failed deliveries) -->
+                    {% if delivery.status not in 'delivered,failed,cancelled' %}
+                    <div class="mt-4 border-top pt-3">
+                        <a href="{% url 'delivery:report_issue' delivery.pk %}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-exclamation-triangle small align-middle"></i> Report an Issue
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Delivery Timestamps -->
+                    <div class="mt-4">
+                        <h6>Delivery Timeline</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>Created:</span>
+                                <span>{{ delivery.created_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% if delivery.assigned_at %}
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>Assigned:</span>
+                                <span>{{ delivery.assigned_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% endif %}
+                            {% if delivery.accepted_at %}
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>Accepted:</span>
+                                <span>{{ delivery.accepted_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% endif %}
+                            {% if delivery.arrived_at_store_at %}
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>At Store:</span>
+                                <span>{{ delivery.arrived_at_store_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% endif %}
+                            {% if delivery.picked_up_at %}
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>Picked Up:</span>
+                                <span>{{ delivery.picked_up_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% endif %}
+                            {% if delivery.delivered_at %}
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <span>Delivered:</span>
+                                <span>{{ delivery.delivered_at|date:"M d, h:i A" }}</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Delivery</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'delivery:cancel_delivery' delivery.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this delivery?</p>
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">Reason for cancellation</label>
+                        <textarea class="form-control" id="cancelReason" name="reason" rows="3" required></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle small align-middle"></i>
+                        Frequent cancellations may affect your agent rating and future assignments.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Go Back</button>
+                    <button type="submit" class="btn btn-danger">Cancel Delivery</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock delivery_content %}
+
+{% block extra_css %}
+<style>
+    /* Timeline styling */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 9px;
+        height: 100%;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+    .timeline-content {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .timeline-item:last-child .timeline-content {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    /* Sticky actions on mobile */
+    @media (max-width: 992px) {
+        .sticky-top {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Any JavaScript for the delivery detail page -->
+{% endblock %}

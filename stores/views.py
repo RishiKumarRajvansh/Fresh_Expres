@@ -10,7 +10,7 @@ from django.db.models import Q, Count
 from .models import Store, StoreClosureRequest
 from catalog.models import StoreProduct
 from orders.models import Order
-from delivery.models import DeliveryAgent
+from delivery_new.models import DeliveryAgent
 from core.decorators import StoreRequiredMixin, store_required
 import json
 
@@ -32,53 +32,94 @@ class StoreDashboardView(StoreRequiredMixin, TemplateView):
             store = user_stores.first()
             context['store'] = store
             
-            # Get basic stats
-            context['total_products'] = StoreProduct.objects.filter(store=store).count()
-            context['active_products'] = StoreProduct.objects.filter(
-                store=store, 
-                is_available=True
-            ).count()
+            # Get today's date for filtering
+            today = timezone.now().date()
+            
+            # Get comprehensive stats
+            total_products = StoreProduct.objects.filter(store=store).count()
+            active_products = StoreProduct.objects.filter(store=store, is_available=True).count()
             
             # Get pending orders for dashboard
             try:
                 from orders.models import Order
+                from django.db.models import Sum
+                
+                # Today's orders
+                today_orders = Order.objects.filter(
+                    store=store,
+                    created_at__date=today
+                ).exclude(status='cancelled')
+                
+                # Pending orders
                 pending_orders = Order.objects.filter(
-                    delivery_agent__isnull=True,
-                    status='pending'
-                ).select_related('user')[:5]
-                context['pending_orders'] = pending_orders
-                context['pending_orders_count'] = Order.objects.filter(status='pending').count()
-            except:
-                context['pending_orders'] = []
-                context['pending_orders_count'] = 0
+                    store=store,
+                    status__in=['pending', 'confirmed']
+                ).select_related('user').order_by('-created_at')[:10]
+                
+                # Recent orders (last 5)
+                recent_orders = Order.objects.filter(
+                    store=store
+                ).select_related('user').order_by('-created_at')[:5]
+                
+                # Revenue calculations
+                today_revenue = today_orders.aggregate(
+                    total=Sum('total_amount')
+                )['total'] or 0
+                
+                # Low stock items
+                low_stock_products = StoreProduct.objects.filter(
+                    store=store,
+                    stock_quantity__lte=10,
+                    is_available=True
+                ).select_related('product')[:10]
+                
+                context.update({
+                    'pending_orders': pending_orders,
+                    'recent_orders': recent_orders,
+                    'low_stock_products': low_stock_products,
+                    'today_orders_count': today_orders.count(),
+                    'today_revenue': today_revenue,
+                    'pending_orders_count': pending_orders.count(),
+                    'low_stock_count': low_stock_products.count(),
+                })
+                
+            except Exception as e:
+                context.update({
+                    'pending_orders': [],
+                    'recent_orders': [],
+                    'low_stock_products': [],
+                    'today_orders_count': 0,
+                    'today_revenue': 0,
+                    'pending_orders_count': 0,
+                    'low_stock_count': 0,
+                })
+            
+            # Get basic stats
+            context['total_products'] = total_products
+            context['active_products'] = active_products
             
             # Stats for the enhanced dashboard
             # Determine available delivery agents for this store: either assigned to the store
             # or those who serve any of the store's active ZIP areas.
-            served_zip_areas = store.zip_coverages.filter(is_active=True).values_list('zip_area', flat=True)
             agents_qs = DeliveryAgent.objects.filter(
-                Q(store=store) | Q(zip_coverages__zip_area__in=served_zip_areas, zip_coverages__is_active=True),
+                store=store,
                 is_available=True
             ).distinct()
 
             # If the store is closed, we shouldn't show pending orders or available agents
             if store.status != 'open':
-                pending_orders = []
-                pending_orders_count = 0
                 available_agents_count = 0
             else:
-                pending_orders = context.get('pending_orders', [])
-                pending_orders_count = context.get('pending_orders_count', 0)
                 available_agents_count = agents_qs.count()
 
             context['stats'] = {
-                'pending_orders': pending_orders_count,
-                'low_stock_count': StoreProduct.objects.filter(
-                    store=store, 
-                    stock_quantity__lt=10
-                ).count(),
+                'pending_orders': context.get('pending_orders_count', 0),
+                'low_stock_count': context.get('low_stock_count', 0),
                 'available_agents': available_agents_count,
-                'staff_count': 0,  # Staff functionality removed
+                'today_orders': context.get('today_orders_count', 0),
+                'today_revenue': context.get('today_revenue', 0),
+                'total_products': total_products,
+                'active_products': active_products,
             }
             
             # Store status
@@ -121,18 +162,20 @@ class StoreProductsView(LoginRequiredMixin, ListView):
             context['store'] = user_stores.first()
         return context
 
-class StoreOrdersView(LoginRequiredMixin, ListView):
+class StoreOrdersView(StoreRequiredMixin, ListView):
     """View and manage store orders"""
     template_name = 'stores/orders.html'
     context_object_name = 'orders'
     paginate_by = 20
     
     def get_queryset(self):
+        # StoreRequiredMixin already ensures the user is authenticated and a store owner
         user_stores = Store.objects.filter(owner=self.request.user)
         if user_stores.exists():
             store = user_stores.first()
             # Return orders for this store (will be implemented with Order model)
-            return []
+            from orders.models import Order
+            return Order.objects.filter(store=store).order_by('-created_at')
         return []
     
     def get_context_data(self, **kwargs):
@@ -156,10 +199,9 @@ class DeliveryAgentsView(LoginRequiredMixin, ListView):
                 return DeliveryAgent.objects.none()
 
             # Return delivery agents assigned to the store or who serve the store's active ZIP areas
-            served_zip_areas = store.zip_coverages.filter(is_active=True).values_list('zip_area', flat=True)
             agents_qs = DeliveryAgent.objects.filter(
-                Q(store=store) | Q(zip_coverages__zip_area__in=served_zip_areas, zip_coverages__is_active=True),
-                is_active=True
+                store=store,
+                status='active'
             ).distinct().order_by('-is_available', 'user__last_name')
 
             return agents_qs
@@ -245,10 +287,10 @@ class BulkUploadView(LoginRequiredMixin, FormView):
     template_name = 'stores/bulk_upload.html'
     success_url = reverse_lazy('stores:products')
 
-class OrderDetailView(LoginRequiredMixin, TemplateView):
+class OrderDetailView(LoginRequiredMixin, StoreRequiredMixin, TemplateView):
     template_name = 'stores/order_detail.html'
 
-class UpdateOrderStatusView(LoginRequiredMixin, TemplateView):
+class UpdateOrderStatusView(LoginRequiredMixin, StoreRequiredMixin, TemplateView):
     template_name = 'stores/update_order_status.html'
 
 class CheckAvailabilityView(TemplateView):
@@ -262,7 +304,6 @@ class UpdateInventoryView(TemplateView):
 
 # ================ NEW STORE DASHBOARD VIEWS ================
 
-@store_required
 @store_required
 def store_orders(request):
     """View for managing store orders - Only accessible by store owners"""
@@ -310,9 +351,17 @@ def order_detail(request, order_id):
     # Staff assignment and assignment features removed
     order.staff_assignment = None
     
+    # Get the latest delivery for this order
+    try:
+        from delivery_new.models import Delivery
+        delivery = Delivery.objects.filter(order=order).latest('assigned_at')
+    except:
+        delivery = None
+    
     context = {
         'store': store,
         'order': order,
+        'delivery': delivery,
         'available_staff': [],  # Staff functionality removed
     }
     
@@ -410,10 +459,7 @@ def store_inventory(request):
             return redirect('stores:inventory_management')
             
         except Exception as e:
-            print(f"Product addition error: {e}")  # For debugging
-            import traceback
-            traceback.print_exc()
-            messages.error(request, 'Failed to add product. Please try again.')
+            messages.error(request, f'Failed to add product: {str(e)}')
             return redirect('stores:inventory_management')
     
     # Get products for this store
@@ -553,13 +599,13 @@ def delivery_agents(request):
     ).distinct()
     
     # Get delivery agents that serve any of the ZIP areas this store serves
-    from delivery.models import DeliveryAgent, DeliveryAgentZipCoverage
+    from delivery_new.models import DeliveryAgent
     
     # Combine both conditions into a single QuerySet using Q to avoid union issues
     from django.db.models import Q
 
     agents = DeliveryAgent.objects.filter(
-        Q(zip_coverages__zip_area__in=served_zip_areas, zip_coverages__is_active=True) | Q(store=store)
+        Q(store=store)
     ).select_related('user').distinct().order_by('-is_available', 'user__first_name')
     
     # Separate available and unavailable agents
@@ -612,12 +658,6 @@ def update_order_status(request):
     """AJAX endpoint to update order status - Only accessible by store owners"""
     if request.method == 'POST':
         try:
-            # Lightweight debug trace to confirm request arrives in server logs
-            try:
-                print('UPDATE_ORDER_STATUS_HIT', 'user=', getattr(request.user, 'username', None), 'COOKIES=', list(getattr(request, 'COOKIES', {}).keys()), 'POST_keys=', list(request.POST.keys()))
-            except Exception:
-                pass
-            
             # Get the store for the current user
             try:
                 if request.user.user_type == 'store_owner':
@@ -659,12 +699,6 @@ def update_order_status(request):
             )
 
             if success:
-                # Success trace
-                try:
-                    print('UPDATE_ORDER_STATUS_SUCCESS', f'order={order.id}', f'to={order.status}', 'by=', getattr(request.user, 'username', None))
-                except Exception:
-                    pass
-
                 return JsonResponse({
                     'success': True,
                     'message': message,
@@ -677,11 +711,9 @@ def update_order_status(request):
                 return JsonResponse({'success': False, 'message': message})
             
         except Exception as e:
-            import traceback
             return JsonResponse({
                 'success': False, 
                 'message': str(e), 
-                'debug': traceback.format_exc() if request.user.is_staff else None,
                 'posted_order_id': request.POST.get('order_id'), 
                 'posted_status': request.POST.get('status')
             })

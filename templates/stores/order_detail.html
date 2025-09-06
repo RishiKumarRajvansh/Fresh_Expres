@@ -228,6 +228,34 @@
             
             {% endif %}
 
+            <!-- Delivery OTP Information -->
+            {% if delivery %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user me-2"></i>Delivery Agent</h6>
+                            <p class="mb-1"><strong>{{ delivery.agent.user.first_name }} {{ delivery.agent.user.last_name }}</strong></p>
+                            <p class="text-muted small"><i class="fas fa-phone me-1"></i>{{ delivery.agent.phone_number }}</p>
+                            <p class="mb-0"><span class="badge bg-{{ delivery.status|yesno:'success,warning' }}">{{ delivery.get_status_display }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-key me-2"></i>Store Pickup OTP</h6>
+                            <div class="alert alert-warning py-2">
+                                <span class="h4 fw-bold">{{ delivery.store_pickup_otp }}</span>
+                            </div>
+                            <p class="text-muted small">
+                                Share this 6-digit OTP with the delivery agent when they arrive to verify pickup
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Workflow Codes and Handover Information -->
             {% if order.delivery_confirmation_code or order.handover_code %}
             <div class="card mb-4">

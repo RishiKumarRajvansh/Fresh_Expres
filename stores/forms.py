@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from locations.models import ZipArea
 from stores.models import StoreZipCoverage
-from delivery.models import DeliveryAgentZipCoverage
+from delivery_new.models import DeliveryAgentZipCoverage
 
 User = get_user_model()
 
